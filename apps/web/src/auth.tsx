@@ -110,29 +110,43 @@ export const GoogleSignIn: React.FC = () => {
 
     script.onload = () => {
       if (window.google) {
+        // Define the callback function globally
+        (window as any).handleCredentialResponse = async (response: any) => {
+          try {
+            setIsLoading(true);
+            await login(response.credential);
+          } catch (error) {
+            console.error('Sign-in error:', error);
+            alert('Sign-in failed. Please try again.');
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
         window.google.accounts.id.initialize({
           client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: handleCredentialResponse,
+          callback: (window as any).handleCredentialResponse,
         });
+
+        // Render the button
+        window.google.accounts.id.renderButton(
+          document.getElementById('google-signin-button')!,
+          { 
+            theme: 'outline', 
+            size: 'large',
+            text: 'signin_with',
+            shape: 'rectangular'
+          }
+        );
       }
     };
 
     return () => {
-      document.head.removeChild(script);
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
     };
-  }, []);
-
-  const handleCredentialResponse = async (response: any) => {
-    try {
-      setIsLoading(true);
-      await login(response.credential);
-    } catch (error) {
-      console.error('Sign-in error:', error);
-      alert('Sign-in failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [login]);
 
   const handleSignOut = () => {
     logout();
@@ -164,24 +178,7 @@ export const GoogleSignIn: React.FC = () => {
   }
 
   return (
-    <div
-      id="g_id_onload"
-      data-client_id={import.meta.env.VITE_GOOGLE_CLIENT_ID}
-      data-context="signin"
-      data-ux_mode="popup"
-      data-callback="handleCredentialResponse"
-      data-auto_prompt="false"
-    >
-      <div
-        className="g_id_signin"
-        data-type="standard"
-        data-shape="rectangular"
-        data-theme="outline"
-        data-text="signin_with"
-        data-size="large"
-        data-logo_alignment="left"
-      />
-    </div>
+    <div id="google-signin-button"></div>
   );
 };
 
