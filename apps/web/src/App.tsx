@@ -12,6 +12,7 @@ interface EntryExit {
   date: string;
   portOfEntry: string;
   notes?: string;
+  proofLink?: string; // Add proof link field
   createdAt: string;
   updatedAt: string;
 }
@@ -35,7 +36,8 @@ function App() {
     date: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
     portOfEntry: '',
     notes: '',
-    correspondingEntryId: '' // New field for selecting corresponding entry
+    correspondingEntryId: '', // New field for selecting corresponding entry
+    proofLink: '' // New field for proof link
   });
 
   const commonPorts = [
@@ -195,7 +197,8 @@ function App() {
       date: new Date(entry.date).toISOString().slice(0, 16), // Format for datetime-local input
       portOfEntry: entry.portOfEntry,
       notes: entry.notes || '',
-      correspondingEntryId: '' // Reset corresponding entry ID when editing
+      correspondingEntryId: '', // Reset corresponding entry ID when editing
+      proofLink: entry.proofLink || '' // Reset proof link when editing
     });
     setShowForm(true);
   };
@@ -206,7 +209,8 @@ function App() {
       date: new Date().toISOString().slice(0, 16), // Format for datetime-local input
       portOfEntry: '',
       notes: '',
-      correspondingEntryId: '' // Reset corresponding entry ID
+      correspondingEntryId: '', // Reset corresponding entry ID
+      proofLink: '' // Reset proof link
     });
     setEditingEntry(null);
     setShowForm(false);
@@ -454,9 +458,25 @@ function App() {
                     value={formData.notes}
                     onChange={(e) => setFormData({...formData, notes: e.target.value})}
                     className="form-textarea"
-                    rows={3}
                     placeholder="Any additional notes..."
+                    rows={3}
                   />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Proof Link (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.proofLink}
+                    onChange={(e) => setFormData({...formData, proofLink: e.target.value})}
+                    className="form-input"
+                    placeholder="https://example.com/proof or file:///path/to/file"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Link to photo, receipt, or document as proof of entry/exit
+                  </p>
                 </div>
 
                 <div className="flex gap-3 pt-4">
@@ -501,7 +521,7 @@ function App() {
                 return (
                   <div key={entry.id} className={`entry-item ${entry.type === 'ENTRY' && !hasExit ? 'entry-open' : ''}`}>
                     <div className="entry-info">
-                      <span className={`entry-type ${entry.type.toLowerCase()} ${entry.type === 'ENTRY' && !hasExit ? 'entry-open' : ''}`}>
+                      <span className={`entry-type ${hasExit ? '' : 'entry-open'}`}>
                         {entry.type}
                         {entry.type === 'ENTRY' && !hasExit && ' (Open)'}
                       </span>
@@ -514,6 +534,18 @@ function App() {
                       </div>
                       {entry.notes && (
                         <div className="entry-notes">{entry.notes}</div>
+                      )}
+                      {entry.proofLink && (
+                        <div className="entry-proof">
+                          <a 
+                            href={entry.proofLink} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="proof-link"
+                          >
+                            📎 View Proof
+                          </a>
+                        </div>
                       )}
                     </div>
                     <div className="entry-actions">

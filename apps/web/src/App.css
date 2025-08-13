@@ -341,9 +341,27 @@ body {
 }
 
 .entry-notes {
+  color: #6b7280;
   font-size: 0.875rem;
-  color: #888;
-  font-style: italic;
+  margin-top: 0.25rem;
+}
+
+.entry-proof {
+  margin-top: 0.5rem;
+}
+
+.proof-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.proof-link:hover {
+  text-decoration: underline;
+  color: #2563eb;
 }
 
 .entry-actions {

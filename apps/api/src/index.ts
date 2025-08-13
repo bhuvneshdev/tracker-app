@@ -16,11 +16,12 @@ app.use(express.json());
 app.use(logger);
 
 // Validation schemas
-const EntryExitSchema = z.object({
+const entryExitSchema = z.object({
   type: z.enum(['ENTRY', 'EXIT']),
   date: z.string().datetime(),
-  portOfEntry: z.string().min(1),
+  portOfEntry: z.string().min(1, 'Port of entry is required'),
   notes: z.string().optional(),
+  proofLink: z.string().url().optional().or(z.literal('')) // Allow empty string or valid URL
 });
 
 // Helper function to calculate days in Canada
@@ -127,7 +128,7 @@ app.get('/api/entries', async (req, res) => {
 // Add new entry/exit
 app.post('/api/entries', async (req, res) => {
   try {
-    const validatedData = EntryExitSchema.parse(req.body);
+    const validatedData = entryExitSchema.parse(req.body);
     
     const entry = await prisma.entryExit.create({
       data: {
@@ -189,7 +190,7 @@ app.delete('/api/entries/:id', async (req, res) => {
 app.put('/api/entries/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const validatedData = EntryExitSchema.parse(req.body);
+    const validatedData = entryExitSchema.parse(req.body);
     
     const entry = await prisma.entryExit.update({
       where: { id },
