@@ -146,20 +146,47 @@ app.get('/', (req, res) => {
   });
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ 
+      status: 'OK', 
+      database: 'connected',
+      timestamp: new Date().toISOString() 
+    });
+  } catch (error) {
+    console.error('Database connection error:', error);
+    res.status(500).json({ 
+      status: 'ERROR', 
+      database: 'disconnected',
+      error: error.message,
+      timestamp: new Date().toISOString() 
+    });
+  }
 });
 
 // Get all entries/exits
 app.get('/api/entries', async (req, res) => {
   try {
+    console.log('Attempting to fetch entries from database...');
     const entries = await prisma.entryExit.findMany({
       orderBy: { date: 'asc' }, // Changed from 'desc' to 'asc' for chronological order
     });
+    console.log(`Successfully fetched ${entries.length} entries`);
     res.json(entries);
   } catch (error) {
     console.error('Error fetching entries:', error);
-    res.status(500).json({ error: 'Failed to fetch entries' });
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code,
+      meta: error.meta
+    });
+    res.status(500).json({ 
+      error: 'Failed to fetch entries',
+      details: error.message 
+    });
   }
 });
 
