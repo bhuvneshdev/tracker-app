@@ -14,9 +14,13 @@ app.use(helmet());
 app.use(cors({
   origin: [
     'https://canada-tracker-web.onrender.com',
+    'https://canada-tracker-web.onrender.com/',
     'http://localhost:5173', // For local development
-    'http://localhost:3000'  // Alternative local dev port
+    'http://localhost:3000',  // Alternative local dev port
+    'http://localhost:4173'   // Vite preview port
   ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 app.use(express.json());
