@@ -143,9 +143,10 @@ body {
 }
 
 .form-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group {
@@ -205,6 +206,7 @@ body {
   padding-top: 1.5rem;
   border-top: 1px solid #e5e7eb;
   margin-top: 1.5rem;
+  grid-column: 1 / -1; /* Span across all columns */
 }
 
 .btn-primary {
