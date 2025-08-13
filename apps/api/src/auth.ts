@@ -54,16 +54,23 @@ export const generateToken = (userId: string): string => {
 
 export const verifyGoogleToken = async (idToken: string) => {
   try {
-    // For now, we'll decode the base64 token directly
-    // In production, you should verify with Google's API
-    const decoded = JSON.parse(atob(idToken));
+    // Verify the token with Google's API
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    
+    if (!response.ok) {
+      throw new Error('Invalid Google token');
+    }
+    
+    const payload = await response.json() as any;
+    
     return {
-      email: decoded.email,
-      name: decoded.name,
-      picture: decoded.picture,
-      googleId: decoded.sub
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+      googleId: payload.sub
     };
   } catch (error) {
+    console.error('Google token verification error:', error);
     throw new Error('Failed to verify Google token');
   }
 };
