@@ -35,8 +35,8 @@ model EntryExit {
   notes     String?
   proofLink String? // Add proof link field
   i94Proof  String? // Add I-94 proof field
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

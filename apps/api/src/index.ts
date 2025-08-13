@@ -250,7 +250,12 @@ app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res
   try {
     console.log('Attempting to fetch entries from database...');
     const entries = await prisma.entryExit.findMany({
-      where: { userId: req.user!.id },
+      where: { 
+        OR: [
+          { userId: req.user!.id },
+          { userId: null } // Include legacy entries for now
+        ]
+      },
       orderBy: { date: 'asc' }, // Changed from 'desc' to 'asc' for chronological order
     });
     console.log(`Successfully fetched ${entries.length} entries`);
@@ -300,7 +305,12 @@ app.post('/api/entries', authenticateToken, async (req: AuthenticatedRequest, re
 app.get('/api/stats', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const entries = await prisma.entryExit.findMany({
-      where: { userId: req.user!.id },
+      where: { 
+        OR: [
+          { userId: req.user!.id },
+          { userId: null } // Include legacy entries for now
+        ]
+      },
       orderBy: { date: 'asc' },
     });
     
