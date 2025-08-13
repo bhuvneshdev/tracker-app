@@ -364,6 +364,14 @@ body {
   color: #2563eb;
 }
 
+.proof-link.i94-proof {
+  color: #059669; /* Green color for I-94 */
+}
+
+.proof-link.i94-proof:hover {
+  color: #047857;
+}
+
 .entry-actions {
   display: flex;
   gap: 0.5rem;

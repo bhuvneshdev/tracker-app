@@ -21,6 +21,7 @@ model EntryExit {
   portOfEntry String
   notes     String?
   proofLink String? // Add proof link field
+  i94Proof  String? // Add I-94 proof field
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

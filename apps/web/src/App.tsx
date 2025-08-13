@@ -13,6 +13,7 @@ interface EntryExit {
   portOfEntry: string;
   notes?: string;
   proofLink?: string; // Add proof link field
+  i94Proof?: string; // Add I-94 proof field
   createdAt: string;
   updatedAt: string;
 }
@@ -37,7 +38,8 @@ function App() {
     portOfEntry: '',
     notes: '',
     correspondingEntryId: '', // New field for selecting corresponding entry
-    proofLink: '' // New field for proof link
+    proofLink: '', // New field for proof link
+    i94Proof: '' // New field for I-94 proof
   });
 
   const commonPorts = [
@@ -198,7 +200,8 @@ function App() {
       portOfEntry: entry.portOfEntry,
       notes: entry.notes || '',
       correspondingEntryId: '', // Reset corresponding entry ID when editing
-      proofLink: entry.proofLink || '' // Reset proof link when editing
+      proofLink: entry.proofLink || '', // Reset proof link when editing
+      i94Proof: entry.i94Proof || '' // Reset I-94 proof when editing
     });
     setShowForm(true);
   };
@@ -210,7 +213,8 @@ function App() {
       portOfEntry: '',
       notes: '',
       correspondingEntryId: '', // Reset corresponding entry ID
-      proofLink: '' // Reset proof link
+      proofLink: '', // Reset proof link
+      i94Proof: '' // Reset I-94 proof
     });
     setEditingEntry(null);
     setShowForm(false);
@@ -479,6 +483,22 @@ function App() {
                   </p>
                 </div>
 
+                <div className="form-group">
+                  <label className="form-label">
+                    I-94 Proof (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.i94Proof}
+                    onChange={(e) => setFormData({...formData, i94Proof: e.target.value})}
+                    className="form-input"
+                    placeholder="https://i94.cbp.dhs.gov/I94/ or screenshot link"
+                  />
+                  <p className="text-sm text-gray-600 mt-1">
+                    Link to I-94 record from <a href="https://i94.cbp.dhs.gov/I94/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">cbp.dhs.gov</a> or screenshot
+                  </p>
+                </div>
+
                 <div className="flex gap-3 pt-4">
                   <button
                     type="submit"
@@ -544,6 +564,18 @@ function App() {
                             className="proof-link"
                           >
                             📎 View Proof
+                          </a>
+                        </div>
+                      )}
+                      {entry.i94Proof && (
+                        <div className="entry-proof">
+                          <a 
+                            href={entry.i94Proof} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="proof-link i94-proof"
+                          >
+                            🛂 View I-94
                           </a>
                         </div>
                       )}

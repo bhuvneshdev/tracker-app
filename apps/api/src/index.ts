@@ -21,7 +21,8 @@ const entryExitSchema = z.object({
   date: z.string().datetime(),
   portOfEntry: z.string().min(1, 'Port of entry is required'),
   notes: z.string().optional(),
-  proofLink: z.string().url().optional().or(z.literal('')) // Allow empty string or valid URL
+  proofLink: z.string().url().optional().or(z.literal('')), // Allow empty string or valid URL
+  i94Proof: z.string().url().optional().or(z.literal('')) // Allow empty string or valid URL
 });
 
 // Helper function to calculate days in Canada
