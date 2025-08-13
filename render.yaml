@@ -13,3 +13,15 @@ services:
       - key: DATABASE_URL
         value: postgresql://neondb_owner:npg_XJ3Em1PHklVR@ep-jolly-dust-afd7faly-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
     healthCheckPath: /api/health
+
+  # Frontend Web Service
+  - type: web
+    name: canada-tracker-web
+    env: static
+    rootDir: apps/web
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    plan: free
+    envVars:
+      - key: VITE_API_URL
+        value: https://canada-tracker-api.onrender.com/api
