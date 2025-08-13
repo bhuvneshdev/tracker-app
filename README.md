@@ -1,4 +1,4 @@
-# 🇨🇦 Canada Residency Days Tracker
+# 📊 Tracker App
 
 A comprehensive web application to track your 730-day residency obligation as a Canadian Permanent Resident. Perfect for PR holders living in the USA on H1B who need to maintain their residency status.
 

@@ -1,4 +1,4 @@
-# 🚀 Deployment Guide - Canada Days Tracker
+# 🚀 Deployment Guide - Tracker App
 
 ## Quick Deploy (Recommended)
 
@@ -15,7 +15,7 @@
 1. **Go to [neon.tech](https://neon.tech)**
 2. **Sign up/Login** with GitHub
 3. **Create new project**:
-   - Project name: `canada-days-tracker`
+   - Project name: `tracker-app`
    - Region: Choose closest to you
 4. **Copy the connection string** (looks like: `postgresql://user:pass@host/db?sslmode=require`)
 
@@ -29,7 +29,7 @@
 4. **Connect your GitHub repository**
 5. **Configure service**:
    ```
-   Name: canada-tracker-api
+   Name: tracker-api
    Build Command: cd apps/api && npm install && npm run build
    Start Command: cd apps/api && npm start
    ```
@@ -40,7 +40,7 @@
    ```
 7. **Click "Create Web Service"**
 8. **Wait for deployment** (5-10 minutes)
-9. **Copy your service URL** (e.g., `https://canada-tracker-api.onrender.com`)
+9. **Copy your service URL** (e.g., `https://tracker-api.onrender.com`)
 
 ---
 
@@ -59,7 +59,7 @@
    ```
 6. **Add Environment Variables**:
    ```
-   VITE_API_URL=https://your-render-app.onrender.com/api
+   VITE_API_URL=https://tracker-api.onrender.com/api
    ```
 7. **Click "Deploy"**
 8. **Wait for deployment** (2-3 minutes)
@@ -85,7 +85,7 @@ After deployment, you need to run the database migration:
 
 ## Step 5: Test Your Live App
 
-1. **Visit your Vercel URL** (e.g., `https://canada-days-tracker.vercel.app`)
+1. **Visit your Vercel URL** (e.g., `https://tracker-app.vercel.app`)
 2. **Add a test entry** to verify everything works
 3. **Check the calculation** is working correctly
 
@@ -144,8 +144,8 @@ After deployment, you need to run the database migration:
 ## Your Live URLs
 
 After deployment, you'll have:
-- **Frontend**: `https://your-app.vercel.app`
-- **Backend**: `https://your-api.onrender.com`
+- **Frontend**: `https://tracker-app.vercel.app`
+- **Backend**: `https://tracker-api.onrender.com`
 - **Database**: Neon dashboard
 
-**Your Canada Days Tracker will be live and accessible from anywhere!** 🌍
+**Your Tracker App will be live and accessible from anywhere!** 🌍
