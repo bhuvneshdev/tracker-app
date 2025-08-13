@@ -321,6 +321,12 @@ body {
 .list-disc { list-style-type: disc; }
 .list-inside { list-style-position: inside; }
 
+/* Error message styles */
+.text-red-600 { color: #dc2626; }
+.text-sm { font-size: 0.875rem; }
+.mt-1 { margin-top: 0.25rem; }
+.text-gray-600 { color: #4b5563; }
+
 .entry-date {
   font-size: 1rem;
   font-weight: 500;

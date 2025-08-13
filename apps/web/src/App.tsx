@@ -34,7 +34,8 @@ function App() {
     type: 'ENTRY' as 'ENTRY' | 'EXIT',
     date: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
     portOfEntry: '',
-    notes: ''
+    notes: '',
+    correspondingEntryId: '' // New field for selecting corresponding entry
   });
 
   const commonPorts = [
@@ -102,21 +103,41 @@ function App() {
     
     // Validate entry/exit logic
     if (submissionData.type === 'EXIT') {
-      // Check if there's an unclosed entry before this exit
-      const hasUnclosedEntry = entries.some(entry => 
-        entry.type === 'ENTRY' && 
-        new Date(entry.date) < new Date(submissionData.date) &&
-        !entries.some(exit => 
-          exit.type === 'EXIT' && 
-          new Date(exit.date) > new Date(entry.date) && 
-          new Date(exit.date) < new Date(submissionData.date)
-        )
-      );
-      
-      if (!hasUnclosedEntry) {
-        alert('Cannot add EXIT without a corresponding ENTRY. Please add an ENTRY first.');
+      // Check if user selected a corresponding entry
+      if (!submissionData.correspondingEntryId) {
+        alert('Please select which entry you are exiting from.');
         return;
       }
+      
+      // Verify the selected entry exists and is unclosed
+      const selectedEntry = entries.find(entry => entry.id === submissionData.correspondingEntryId);
+      if (!selectedEntry) {
+        alert('Selected entry not found. Please try again.');
+        return;
+      }
+      
+      if (selectedEntry.type !== 'ENTRY') {
+        alert('Selected entry is not an ENTRY. Please select a valid entry.');
+        return;
+      }
+      
+      // Check if the selected entry already has an exit
+      const hasExit = entries.some(exit => 
+        exit.type === 'EXIT' && 
+        new Date(exit.date) > new Date(selectedEntry.date)
+      );
+      
+      if (hasExit) {
+        alert('This entry already has an exit. Please select a different entry.');
+        return;
+      }
+      
+      // Verify exit date is after entry date
+      if (new Date(submissionData.date) <= new Date(selectedEntry.date)) {
+        alert('Exit date must be after the entry date.');
+        return;
+      }
+      
     } else if (submissionData.type === 'ENTRY') {
       // Check if there's already an unclosed entry (any entry without a corresponding exit)
       const unclosedEntries = entries.filter(entry => 
@@ -173,7 +194,8 @@ function App() {
       type: entry.type,
       date: new Date(entry.date).toISOString().slice(0, 16), // Format for datetime-local input
       portOfEntry: entry.portOfEntry,
-      notes: entry.notes || ''
+      notes: entry.notes || '',
+      correspondingEntryId: '' // Reset corresponding entry ID when editing
     });
     setShowForm(true);
   };
@@ -183,7 +205,8 @@ function App() {
       type: 'ENTRY',
       date: new Date().toISOString().slice(0, 16), // Format for datetime-local input
       portOfEntry: '',
-      notes: ''
+      notes: '',
+      correspondingEntryId: '' // Reset corresponding entry ID
     });
     setEditingEntry(null);
     setShowForm(false);
@@ -352,6 +375,42 @@ function App() {
                   </select>
                 </div>
 
+                {/* Show corresponding entry selector for EXIT */}
+                {formData.type === 'EXIT' && (
+                  <div className="form-group">
+                    <label className="form-label">
+                      Exit From Entry
+                    </label>
+                    <select
+                      value={formData.correspondingEntryId}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedEntry = entries.find(entry => entry.id === selectedId);
+                        setFormData({
+                          ...formData, 
+                          correspondingEntryId: selectedId,
+                          portOfEntry: selectedEntry ? selectedEntry.portOfEntry : ''
+                        });
+                      }}
+                      className="form-select"
+                      required
+                    >
+                      <option value="">Select the entry you're exiting from</option>
+                      {unclosedEntries.map(entry => (
+                        <option key={entry.id} value={entry.id}>
+                          {format(parseISO(entry.date), 'MMM dd, yyyy HH:mm')} - {entry.portOfEntry}
+                          {entry.notes && ` (${entry.notes})`}
+                        </option>
+                      ))}
+                    </select>
+                    {unclosedEntries.length === 0 && (
+                      <p className="text-sm text-red-600 mt-1">
+                        No unclosed entries found. Please add an ENTRY first.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <div className="form-group">
                   <label className="form-label">
                     Date & Time
@@ -374,12 +433,18 @@ function App() {
                     onChange={(e) => setFormData({...formData, portOfEntry: e.target.value})}
                     className="form-select"
                     required
+                    disabled={formData.type === 'EXIT' && !!formData.correspondingEntryId}
                   >
                     <option value="">Select port of entry</option>
                     {commonPorts.map(port => (
                       <option key={port} value={port}>{port}</option>
                     ))}
                   </select>
+                  {formData.type === 'EXIT' && formData.correspondingEntryId && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Port auto-filled from selected entry
+                    </p>
+                  )}
                 </div>
 
                 <div className="form-group">
