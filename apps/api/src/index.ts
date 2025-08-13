@@ -204,27 +204,27 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-app.get('/api/auth/me', authenticateToken, async (req: AuthenticatedRequest, res) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user!.id }
-    });
+// app.get('/api/auth/me', authenticateToken, async (req: AuthenticatedRequest, res) => {
+//   try {
+//     const user = await prisma.user.findUnique({
+//       where: { id: req.user!.id }
+//     });
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+//     if (!user) {
+//       return res.status(404).json({ error: 'User not found' });
+//     }
 
-    res.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      picture: user.picture
-    });
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    res.status(500).json({ error: 'Failed to fetch user' });
-  }
-});
+//     res.json({
+//       id: user.id,
+//       email: user.email,
+//       name: user.name,
+//       picture: user.picture
+//     });
+//   } catch (error) {
+//     console.error('Error fetching user:', error);
+//     res.status(500).json({ error: 'Failed to fetch user' });
+//   }
+// });
 */
 
 app.get('/api/health', async (req, res) => {
