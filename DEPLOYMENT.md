@@ -1,199 +1,151 @@
-# 🚀 Free Deployment Guide
+# 🚀 Deployment Guide - Canada Days Tracker
 
-Deploy your Canada Residency Tracker for **$0** using:
-- **Frontend**: Vercel (free tier)
-- **Backend API**: Render (free tier) 
-- **Database**: Neon (free tier)
+## Quick Deploy (Recommended)
 
-## Prerequisites
-
+### Prerequisites
 - GitHub account
-- Vercel account (free)
-- Render account (free)
-- Neon account (free)
+- Neon account (free database)
+- Render account (free hosting)
+- Vercel account (free hosting)
 
-## Step 1: Set Up Database (Neon)
+---
 
-1. **Create Neon Account**
-   - Go to https://neon.tech/
-   - Sign up with GitHub
-   - Create a new project
+## Step 1: Database Setup (Neon)
 
-2. **Get Database URL**
-   - Copy the connection string from your Neon dashboard
-   - It looks like: `postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/dbname?sslmode=require`
+1. **Go to [neon.tech](https://neon.tech)**
+2. **Sign up/Login** with GitHub
+3. **Create new project**:
+   - Project name: `canada-days-tracker`
+   - Region: Choose closest to you
+4. **Copy the connection string** (looks like: `postgresql://user:pass@host/db?sslmode=require`)
 
-3. **Test Connection**
-   ```bash
-   cd apps/api
-   # Update .env with your Neon URL
-   echo 'DATABASE_URL="your-neon-connection-string"' > .env
-   npx prisma db push
-   ```
+---
 
-## Step 2: Deploy Backend API (Render)
+## Step 2: Backend Deployment (Render)
 
-1. **Connect GitHub to Render**
-   - Go to https://render.com/
-   - Sign up with GitHub
-   - Connect your repository
-
-2. **Create Web Service**
-   - Click "New +" → "Web Service"
-   - Connect your GitHub repo
-   - Select the repository
-
-3. **Configure Service**
+1. **Go to [render.com](https://render.com)**
+2. **Sign up/Login** with GitHub
+3. **Click "New +" → "Web Service"**
+4. **Connect your GitHub repository**
+5. **Configure service**:
    ```
    Name: canada-tracker-api
-   Root Directory: apps/api
-   Environment: Node
-   Build Command: npm install && npm run build
-   Start Command: npm start
+   Build Command: cd apps/api && npm install && npm run build
+   Start Command: cd apps/api && npm start
    ```
+6. **Add Environment Variables**:
+   ```
+   NODE_ENV=production
+   DATABASE_URL=[Your Neon connection string]
+   ```
+7. **Click "Create Web Service"**
+8. **Wait for deployment** (5-10 minutes)
+9. **Copy your service URL** (e.g., `https://canada-tracker-api.onrender.com`)
 
-4. **Set Environment Variables**
-   - Go to "Environment" tab
-   - Add: `DATABASE_URL` = your Neon connection string
-   - Add: `NODE_ENV` = production
+---
 
-5. **Deploy**
-   - Click "Create Web Service"
-   - Wait for deployment (5-10 minutes)
-   - Copy the URL (e.g., `https://canada-tracker-api.onrender.com`)
+## Step 3: Frontend Deployment (Vercel)
 
-## Step 3: Deploy Frontend (Vercel)
-
-1. **Connect GitHub to Vercel**
-   - Go to https://vercel.com/
-   - Sign up with GitHub
-   - Import your repository
-
-2. **Configure Project**
+1. **Go to [vercel.com](https://vercel.com)**
+2. **Sign up/Login** with GitHub
+3. **Click "New Project"**
+4. **Import your GitHub repository**
+5. **Configure project**:
    ```
    Framework Preset: Vite
    Root Directory: apps/web
    Build Command: npm run build
    Output Directory: dist
    ```
-
-3. **Set Environment Variables**
-   - Go to "Settings" → "Environment Variables"
-   - Add: `VITE_API_URL` = `https://your-api-url.onrender.com/api`
-
-4. **Deploy**
-   - Click "Deploy"
-   - Wait for deployment (2-3 minutes)
-   - Your app is live! 🎉
-
-## Step 4: Update Database Schema
-
-After deployment, update your database schema:
-
-```bash
-# Update the production database
-cd apps/api
-npx prisma db push --schema=./prisma/schema.prisma
-```
-
-## Free Tier Limits
-
-### Vercel (Frontend)
-- ✅ Unlimited deployments
-- ✅ Custom domains
-- ✅ 100GB bandwidth/month
-- ✅ Automatic HTTPS
-
-### Render (Backend API)
-- ⚠️ **Important**: Free tier services sleep after 15 minutes of inactivity
-- ✅ 750 hours/month (enough for personal use)
-- ✅ Automatic HTTPS
-- ✅ Custom domains
-
-### Neon (Database)
-- ✅ 3GB storage
-- ✅ 10GB transfer/month
-- ✅ No sleep (always on)
-- ✅ Automatic backups
-
-## Cost Breakdown: $0/month
-
-- **Vercel**: $0 (free tier)
-- **Render**: $0 (free tier) 
-- **Neon**: $0 (free tier)
-- **Total**: $0/month 🎉
-
-## Custom Domain (Optional)
-
-### Frontend (Vercel)
-1. Go to Vercel dashboard → your project
-2. Settings → Domains
-3. Add your domain
-4. Update DNS records
-
-### Backend (Render)
-1. Go to Render dashboard → your service
-2. Settings → Custom Domains
-3. Add your subdomain (e.g., `api.yourdomain.com`)
-
-## Monitoring & Maintenance
-
-### Health Checks
-- Frontend: Vercel automatically monitors
-- Backend: Render health check at `/api/health`
-- Database: Neon dashboard shows status
-
-### Backups
-- Neon: Automatic daily backups (free tier)
-- Manual: Export data via Prisma Studio
-
-### Updates
-- Push to GitHub → automatic deployment
-- Database migrations: `npx prisma db push`
-
-## Troubleshooting
-
-### API Not Responding
-- Check Render logs for errors
-- Verify DATABASE_URL is correct
-- Check if service is sleeping (free tier limitation)
-
-### Frontend Can't Connect to API
-- Verify VITE_API_URL is correct
-- Check CORS settings
-- Test API endpoint directly
-
-### Database Connection Issues
-- Check Neon dashboard for status
-- Verify connection string format
-- Test with `npx prisma studio`
-
-## Production Checklist
-
-- [ ] Database deployed and connected
-- [ ] API deployed and responding
-- [ ] Frontend deployed and connecting to API
-- [ ] Environment variables set correctly
-- [ ] Database schema updated
-- [ ] Test adding/editing entries
-- [ ] Verify day calculations work correctly
-
-## Security Notes
-
-- Environment variables are encrypted
-- Database connection uses SSL
-- HTTPS enabled by default
-- Regular security updates from platforms
-
-## Scaling (When You Need It)
-
-If you exceed free tiers:
-- **Vercel Pro**: $20/month (unlimited bandwidth)
-- **Render**: $7/month (no sleep, more resources)
-- **Neon Pro**: $10/month (more storage/transfer)
-
-But for personal use, free tiers should be sufficient! 🎯
+6. **Add Environment Variables**:
+   ```
+   VITE_API_URL=https://your-render-app.onrender.com/api
+   ```
+7. **Click "Deploy"**
+8. **Wait for deployment** (2-3 minutes)
+9. **Your app is live!** 🎉
 
 ---
 
-**Your app is now live and accessible from anywhere!** 🌍
+## Step 4: Database Migration
+
+After deployment, you need to run the database migration:
+
+1. **Go to your Render dashboard**
+2. **Click on your API service**
+3. **Go to "Shell" tab**
+4. **Run these commands**:
+   ```bash
+   cd apps/api
+   npx prisma generate
+   npx prisma db push
+   ```
+
+---
+
+## Step 5: Test Your Live App
+
+1. **Visit your Vercel URL** (e.g., `https://canada-days-tracker.vercel.app`)
+2. **Add a test entry** to verify everything works
+3. **Check the calculation** is working correctly
+
+---
+
+## Troubleshooting
+
+### Common Issues:
+
+1. **Database Connection Error**:
+   - Check your `DATABASE_URL` in Render environment variables
+   - Ensure Neon database is active
+
+2. **API Not Found**:
+   - Verify `VITE_API_URL` in Vercel environment variables
+   - Check Render service is running
+
+3. **Build Failures**:
+   - Check build logs in Render/Vercel
+   - Ensure all dependencies are in package.json
+
+### Support:
+- **Render**: Check service logs in dashboard
+- **Vercel**: Check deployment logs
+- **Neon**: Check connection in dashboard
+
+---
+
+## Cost Breakdown
+
+**Free Tier Limits:**
+- **Neon**: 3 projects, 0.5GB storage
+- **Render**: 750 hours/month, 512MB RAM
+- **Vercel**: Unlimited deployments, 100GB bandwidth
+
+**Total Cost: $0/month** 🎉
+
+---
+
+## Next Steps
+
+1. **Custom Domain** (Optional):
+   - Add custom domain in Vercel
+   - Update DNS settings
+
+2. **Monitoring**:
+   - Set up uptime monitoring
+   - Add error tracking
+
+3. **Backup**:
+   - Set up database backups in Neon
+   - Export data regularly
+
+---
+
+## Your Live URLs
+
+After deployment, you'll have:
+- **Frontend**: `https://your-app.vercel.app`
+- **Backend**: `https://your-api.onrender.com`
+- **Database**: Neon dashboard
+
+**Your Canada Days Tracker will be live and accessible from anywhere!** 🌍
