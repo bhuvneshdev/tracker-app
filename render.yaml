@@ -6,6 +6,7 @@ services:
     rootDir: apps/api
     buildCommand: npm install && npm run generate && npm run db:deploy && npm run build
     startCommand: npm start
+    plan: free
     envVars:
       - key: NODE_ENV
         value: production
@@ -14,9 +15,8 @@ services:
     healthCheckPath: /api/health
 
   # Frontend Web Service
-  - type: web
+  - type: static
     name: canada-tracker-web
-    env: static
     rootDir: apps/web
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
