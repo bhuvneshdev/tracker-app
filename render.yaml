@@ -1,7 +1,9 @@
 services:
+  # Backend API Service
   - type: web
     name: canada-tracker-api
     env: node
+    rootDir: apps/api
     buildCommand: npm install && npm run generate && npm run db:deploy && npm run build
     startCommand: npm start
     envVars:
@@ -11,11 +13,13 @@ services:
         sync: false
     healthCheckPath: /api/health
 
+  # Frontend Web Service
   - type: web
     name: canada-tracker-web
     env: static
-    buildCommand: cd ../web && npm install && npm run build
-    staticPublishPath: ../web/dist
+    rootDir: apps/web
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
         value: https://canada-tracker-api.onrender.com/api
