@@ -297,16 +297,10 @@ app.post('/api/entries', async (req, res) => {
   }
 });
 
-// Get total days in Canada for authenticated user
-app.get('/api/stats', authenticateToken, async (req: AuthenticatedRequest, res) => {
+// Get total days in Canada (temporarily without auth until migration completes)
+app.get('/api/stats', async (req, res) => {
   try {
     const entries = await prisma.entryExit.findMany({
-      where: { 
-        OR: [
-          { userId: req.user!.id },
-          { userId: null } // Include legacy entries for now
-        ]
-      },
       orderBy: { date: 'asc' },
     });
     
@@ -325,22 +319,10 @@ app.get('/api/stats', authenticateToken, async (req: AuthenticatedRequest, res) 
   }
 });
 
-// Delete entry for authenticated user
-app.delete('/api/entries/:id', authenticateToken, async (req: AuthenticatedRequest, res) => {
+// Delete entry (temporarily without auth until migration completes)
+app.delete('/api/entries/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // Verify the entry belongs to the user
-    const entry = await prisma.entryExit.findFirst({
-      where: { 
-        id,
-        userId: req.user!.id
-      }
-    });
-    
-    if (!entry) {
-      return res.status(404).json({ error: 'Entry not found' });
-    }
     
     await prisma.entryExit.delete({
       where: { id },
@@ -352,23 +334,11 @@ app.delete('/api/entries/:id', authenticateToken, async (req: AuthenticatedReque
   }
 });
 
-// Update entry for authenticated user
-app.put('/api/entries/:id', authenticateToken, async (req: AuthenticatedRequest, res) => {
+// Update entry (temporarily without auth until migration completes)
+app.put('/api/entries/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const validatedData = entryExitSchema.parse(req.body);
-    
-    // Verify the entry belongs to the user
-    const existingEntry = await prisma.entryExit.findFirst({
-      where: { 
-        id,
-        userId: req.user!.id
-      }
-    });
-    
-    if (!existingEntry) {
-      return res.status(404).json({ error: 'Entry not found' });
-    }
     
     const entry = await prisma.entryExit.update({
       where: { id },
