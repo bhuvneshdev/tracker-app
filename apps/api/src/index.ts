@@ -80,7 +80,27 @@ function calculateDaysInCanada(entries: any[]): number {
       return entryDate > currentEntryDate;
     });
     
-    if (isMostRecent) {
+    // Also check if there are any completed entry/exit pairs after this open entry
+    const hasSubsequentCompletedPairs = (() => {
+      let hasEntryAfterOpen = false;
+      let hasExitAfterOpen = false;
+      
+      for (const entry of sortedEntries) {
+        const entryDate = new Date(entry.date);
+        if (entryDate > currentEntryDate) {
+          if (entry.type === 'ENTRY') {
+            hasEntryAfterOpen = true;
+          } else if (entry.type === 'EXIT') {
+            hasExitAfterOpen = true;
+          }
+        }
+      }
+      
+      // If there are both entry and exit after the open entry, it's a completed pair
+      return hasEntryAfterOpen && hasExitAfterOpen;
+    })();
+    
+    if (isMostRecent && !hasSubsequentCompletedPairs) {
       const entryDate = new Date(currentEntry.date);
       const today = new Date();
       const entryDay = entryDate.toLocaleDateString('en-CA');
@@ -103,7 +123,11 @@ function calculateDaysInCanada(entries: any[]): number {
         }
       }
     } else {
-      console.log(`Past open entry ${currentEntry.date} ignored - not the most recent entry`);
+      if (hasSubsequentCompletedPairs) {
+        console.log(`Past open entry ${currentEntry.date} ignored - has subsequent completed entry/exit pairs`);
+      } else {
+        console.log(`Past open entry ${currentEntry.date} ignored - not the most recent entry`);
+      }
     }
   }
   
