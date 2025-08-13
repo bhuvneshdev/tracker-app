@@ -246,14 +246,14 @@ app.get('/api/health', async (req, res) => {
 });
 
 // Get all entries/exits (temporarily without auth until migration completes)
-app.get('/api/entries', async (req, res) => {
+app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     console.log('Attempting to fetch entries from database...');
-    // For now, get all entries since userId field doesn't exist yet
     const entries = await prisma.entryExit.findMany({
+      where: { userId: req.user!.id },
       orderBy: { date: 'asc' }, // Changed from 'desc' to 'asc' for chronological order
     });
-    console.log(`Successfully fetched ${entries.length} entries`);
+    console.log(`Successfully fetched ${entries.length} entries for user ${req.user!.id}`);
     res.json(entries);
   } catch (error) {
     console.error('Error fetching entries:', error);
@@ -270,8 +270,8 @@ app.get('/api/entries', async (req, res) => {
   }
 });
 
-// Add new entry/exit (temporarily without auth until migration completes)
-app.post('/api/entries', async (req, res) => {
+// Add new entry/exit for authenticated user
+app.post('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const validatedData = entryExitSchema.parse(req.body);
     
@@ -281,6 +281,7 @@ app.post('/api/entries', async (req, res) => {
         date: new Date(validatedData.date),
         portOfEntry: validatedData.portOfEntry,
         notes: validatedData.notes,
+        userId: req.user!.id,
       },
     });
     
