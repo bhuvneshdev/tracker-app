@@ -29,81 +29,82 @@ const entryExitSchema = z.object({
 function calculateDaysInCanada(entries: any[]): number {
   let totalDays = 0;
   let currentEntry: any = null;
-
-  // Sort entries by date
   const sortedEntries = entries.sort((a, b) => 
     new Date(a.date).getTime() - new Date(b.date).getTime()
   );
-
+  
   console.log('Calculating days for entries:', sortedEntries.map(e => ({
     type: e.type,
     date: e.date,
     localDate: new Date(e.date).toLocaleDateString()
   })));
-
-  for (const entry of sortedEntries) {
+  
+  // Process all completed entry/exit pairs
+  for (let i = 0; i < sortedEntries.length; i++) {
+    const entry = sortedEntries[i];
+    
     if (entry.type === 'ENTRY') {
       currentEntry = entry;
     } else if (entry.type === 'EXIT' && currentEntry) {
-      // Convert to local timezone for proper day calculation
       const entryDate = new Date(currentEntry.date);
       const exitDate = new Date(entry.date);
-      
-      // Get the local date strings (YYYY-MM-DD) to compare days
-      const entryDay = entryDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+      const entryDay = entryDate.toLocaleDateString('en-CA');
       const exitDay = exitDate.toLocaleDateString('en-CA');
       
       console.log(`Processing: Entry ${entryDay} -> Exit ${exitDay}`);
       
       if (entryDay === exitDay) {
-        // Same day entry and exit = 1 day
         totalDays += 1;
         console.log(`Same day: +1 day (total: ${totalDays})`);
       } else {
-        // Different days: count each day from entry to exit (inclusive)
         const startDate = new Date(entryDay);
         const endDate = new Date(exitDay);
-        
         let currentDate = new Date(startDate);
+        
         while (currentDate <= endDate) {
           totalDays += 1;
           console.log(`Day ${currentDate.toLocaleDateString()}: +1 day (total: ${totalDays})`);
           currentDate.setDate(currentDate.getDate() + 1);
         }
       }
-      
       currentEntry = null;
     }
   }
-
-  // If there's an open entry (no corresponding exit), count days until today
+  
+  // Only count current open entry if it's the most recent entry and has no exit
   if (currentEntry) {
-    const entryDate = new Date(currentEntry.date);
-    const today = new Date();
+    // Check if this is the most recent entry (no subsequent entries)
+    const isMostRecent = !sortedEntries.some(entry => 
+      new Date(entry.date) > new Date(currentEntry.date)
+    );
     
-    const entryDay = entryDate.toLocaleDateString('en-CA');
-    const todayDay = today.toLocaleDateString('en-CA');
-    
-    console.log(`Open entry: Entry ${entryDay} -> Today ${todayDay}`);
-    
-    if (entryDay === todayDay) {
-      // Entry today = 1 day
-      totalDays += 1;
-      console.log(`Same day as today: +1 day (total: ${totalDays})`);
-    } else {
-      // Count each day from entry to today (inclusive)
-      const startDate = new Date(entryDay);
-      const endDate = new Date(todayDay);
+    if (isMostRecent) {
+      const entryDate = new Date(currentEntry.date);
+      const today = new Date();
+      const entryDay = entryDate.toLocaleDateString('en-CA');
+      const todayDay = today.toLocaleDateString('en-CA');
       
-      let currentDate = new Date(startDate);
-      while (currentDate <= endDate) {
+      console.log(`Current open entry: Entry ${entryDay} -> Today ${todayDay}`);
+      
+      if (entryDay === todayDay) {
         totalDays += 1;
-        console.log(`Day ${currentDate.toLocaleDateString()}: +1 day (total: ${totalDays})`);
-        currentDate.setDate(currentDate.getDate() + 1);
+        console.log(`Same day as today: +1 day (total: ${totalDays})`);
+      } else {
+        const startDate = new Date(entryDay);
+        const endDate = new Date(todayDay);
+        let currentDate = new Date(startDate);
+        
+        while (currentDate <= endDate) {
+          totalDays += 1;
+          console.log(`Day ${currentDate.toLocaleDateString()}: +1 day (total: ${totalDays})`);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
       }
+    } else {
+      console.log(`Past open entry ${currentEntry.date} ignored - not the most recent entry`);
     }
   }
-
+  
   console.log(`Final total days: ${totalDays}`);
   return totalDays;
 }

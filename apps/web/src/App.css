@@ -363,6 +363,8 @@ body {
 .text-sm { font-size: 0.875rem; }
 .mt-1 { margin-top: 0.25rem; }
 .text-gray-600 { color: #4b5563; }
+.text-green-700 { color: #15803d; }
+.text-orange-700 { color: #c2410c; }
 
 .entry-date {
   font-size: 1rem;

@@ -231,7 +231,19 @@ function App() {
     );
   };
 
+  // Helper function to get current open entry (most recent unclosed entry)
+  const getCurrentOpenEntry = () => {
+    const unclosedEntries = getUnclosedEntries();
+    if (unclosedEntries.length === 0) return null;
+    
+    // Return the most recent unclosed entry
+    return unclosedEntries.sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    )[0];
+  };
+
   const unclosedEntries = getUnclosedEntries();
+  const currentOpenEntry = getCurrentOpenEntry();
 
   if (loading) {
     return (
@@ -330,7 +342,7 @@ function App() {
           </button>
         </div>
 
-        {/* Warning for unclosed entries */}
+        {/* Warning Banner for Unclosed Entries */}
         {unclosedEntries.length > 0 && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
             <div className="flex">
@@ -341,19 +353,33 @@ function App() {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-yellow-800">
-                  Unclosed Entries Found
+                  Unclosed Entry{unclosedEntries.length > 1 ? 's' : ''} Found
                 </h3>
                 <div className="mt-2 text-sm text-yellow-700">
-                  <p>The following entries need corresponding EXIT records:</p>
-                  <ul className="mt-1 list-disc list-inside">
-                    {unclosedEntries.map((entry, index) => (
-                      <li key={entry.id}>
-                        {format(parseISO(entry.date), 'MMM dd, yyyy HH:mm')} - {entry.portOfEntry}
-                        {entry.notes && ` (${entry.notes})`}
+                  <p>
+                    {unclosedEntries.length === 1 ? (
+                      <>
+                        You have 1 unclosed entry from <strong>{format(parseISO(currentOpenEntry!.date), 'MMM dd, yyyy')}</strong>.
+                        {currentOpenEntry && currentOpenEntry === unclosedEntries[0] ? (
+                          <span className="text-green-700"> This entry is being counted in your total days.</span>
+                        ) : (
+                          <span className="text-orange-700"> This entry is NOT being counted (you have more recent entries).</span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        You have {unclosedEntries.length} unclosed entries. Only the most recent one is being counted in your total days.
+                      </>
+                    )}
+                  </p>
+                  <ul className="mt-2 list-disc list-inside">
+                    {unclosedEntries.map(entry => (
+                      <li key={entry.id} className={currentOpenEntry && entry.id === currentOpenEntry.id ? 'text-green-700 font-medium' : 'text-orange-700'}>
+                        {format(parseISO(entry.date), 'MMM dd, yyyy')} - {entry.portOfEntry}
+                        {currentOpenEntry && entry.id === currentOpenEntry.id ? ' (Currently Counting)' : ' (Not Counting)'}
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-2 font-medium">Please add EXIT records for these entries to ensure accurate day counting.</p>
                 </div>
               </div>
             </div>
