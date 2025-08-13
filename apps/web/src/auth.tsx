@@ -46,14 +46,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchUser = async () => {
     try {
-      // Temporarily skip API call since auth endpoints are disabled
-      const mockUserData = {
-        id: 'mock-user-id-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        picture: 'https://via.placeholder.com/150'
-      };
-      setUser(mockUserData);
+      const response = await axios.get(`${API_BASE_URL}/auth/me`);
+      setUser(response.data);
     } catch (error) {
       console.error('Error fetching user:', error);
       logout();
@@ -62,20 +56,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (idToken: string) => {
     try {
-      // Temporarily skip API call since auth endpoints are disabled
-      const mockUserData = {
-        id: 'mock-user-id-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        picture: 'https://via.placeholder.com/150'
-      };
+      const response = await axios.post(`${API_BASE_URL}/auth/google`, { idToken });
+      const { token: newToken, user: userData } = response.data;
       
-      setToken('mock-token');
-      setUser(mockUserData);
-      localStorage.setItem('authToken', 'mock-token');
+      setToken(newToken);
+      setUser(userData);
+      localStorage.setItem('authToken', newToken);
       
       // Set default authorization header for all future requests
-      axios.defaults.headers.common['Authorization'] = `Bearer mock-token`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -122,10 +111,11 @@ export const GoogleSignIn: React.FC = () => {
         picture: 'https://via.placeholder.com/150'
       };
       
-      // Skip the API call for now and just set the user directly
-      setUser(mockUserData);
-      setToken('mock-token');
-      localStorage.setItem('authToken', 'mock-token');
+      // Create a mock ID token
+      const mockIdToken = btoa(JSON.stringify(mockUserData));
+      
+      // Use the login function which will handle the API call
+      await login(mockIdToken);
       
     } catch (error) {
       console.error('Sign-in error:', error);
