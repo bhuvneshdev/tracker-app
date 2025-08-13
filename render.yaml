@@ -25,3 +25,5 @@ services:
     envVars:
       - key: VITE_API_URL
         value: https://canada-tracker-api.onrender.com/api
+      - key: VITE_GOOGLE_CLIENT_ID
+        sync: false

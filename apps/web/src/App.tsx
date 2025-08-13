@@ -3,6 +3,7 @@ import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 import { Calendar, MapPin, Plus, Trash2, Edit, TrendingUp, Target, Clock } from 'lucide-react';
 import './App.css';
+import { AuthProvider, useAuth, GoogleSignIn } from './auth';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -25,12 +26,36 @@ interface Stats {
   percentageComplete: number;
 }
 
-function App() {
+function AppContent() {
+  const { isAuthenticated } = useAuth();
   const [entries, setEntries] = useState<EntryExit[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState<EntryExit | null>(null);
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Canada Residency Tracker
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            Sign in to track your days in Canada
+          </p>
+        </div>
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div className="flex justify-center">
+              <GoogleSignIn />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   const [formData, setFormData] = useState({
     type: 'ENTRY' as 'ENTRY' | 'EXIT',
@@ -66,8 +91,10 @@ function App() {
   ];
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
 
   const fetchData = async () => {
     try {
@@ -288,10 +315,15 @@ function App() {
       <div className="container">
         {/* Header */}
         <div className="header">
-          <h1 className="title">
-            🇨🇦 Canada Residency Tracker
-          </h1>
-          <p className="subtitle">Track your 730-day residency obligation</p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="title">
+                🇨🇦 Canada Residency Tracker
+              </h1>
+              <p className="subtitle">Track your 730-day residency obligation</p>
+            </div>
+            <GoogleSignIn />
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -720,6 +752,14 @@ function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
