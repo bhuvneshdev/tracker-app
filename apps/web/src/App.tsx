@@ -362,11 +362,20 @@ function App() {
 
         {/* Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="form-container">
-              <h3 className="form-title">
-                {editingEntry ? 'Edit Entry' : 'Add Entry/Exit'}
-              </h3>
+          <div className="modal-overlay" onClick={() => setShowForm(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="form-title">
+                  {editingEntry ? 'Edit Entry' : 'Add Entry/Exit'}
+                </h3>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                  aria-label="Close modal"
+                >
+                  ×
+                </button>
+              </div>
               
               <form onSubmit={handleSubmit} className="form-grid">
                 <div className="form-group">
