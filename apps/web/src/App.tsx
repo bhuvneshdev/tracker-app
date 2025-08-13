@@ -118,8 +118,8 @@ function App() {
         return;
       }
     } else if (submissionData.type === 'ENTRY') {
-      // Check if there's already an unclosed entry
-      const hasUnclosedEntry = entries.some(entry => 
+      // Check if there's already an unclosed entry (any entry without a corresponding exit)
+      const unclosedEntries = entries.filter(entry => 
         entry.type === 'ENTRY' && 
         !entries.some(exit => 
           exit.type === 'EXIT' && 
@@ -127,8 +127,10 @@ function App() {
         )
       );
       
-      if (hasUnclosedEntry) {
-        alert('Cannot add ENTRY while there is an unclosed entry. Please add an EXIT first.');
+      if (unclosedEntries.length > 0) {
+        const oldestUnclosed = unclosedEntries.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+        const oldestDate = new Date(oldestUnclosed.date).toLocaleDateString();
+        alert(`Cannot add ENTRY while there is an unclosed entry from ${oldestDate}. Please add an EXIT for that entry first.`);
         return;
       }
     }
@@ -186,6 +188,19 @@ function App() {
     setEditingEntry(null);
     setShowForm(false);
   };
+
+  // Helper function to get unclosed entries
+  const getUnclosedEntries = () => {
+    return entries.filter(entry => 
+      entry.type === 'ENTRY' && 
+      !entries.some(exit => 
+        exit.type === 'EXIT' && 
+        new Date(exit.date) > new Date(entry.date)
+      )
+    );
+  };
+
+  const unclosedEntries = getUnclosedEntries();
 
   if (loading) {
     return (
@@ -283,6 +298,36 @@ function App() {
             Add Entry/Exit
           </button>
         </div>
+
+        {/* Warning for unclosed entries */}
+        {unclosedEntries.length > 0 && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Unclosed Entries Found
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>The following entries need corresponding EXIT records:</p>
+                  <ul className="mt-1 list-disc list-inside">
+                    {unclosedEntries.map((entry, index) => (
+                      <li key={entry.id}>
+                        {format(parseISO(entry.date), 'MMM dd, yyyy HH:mm')} - {entry.portOfEntry}
+                        {entry.notes && ` (${entry.notes})`}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 font-medium">Please add EXIT records for these entries to ensure accurate day counting.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Form Modal */}
         {showForm && (

@@ -302,6 +302,25 @@ body {
   background: #fef2f2;
 }
 
+/* Warning banner styles */
+.bg-yellow-50 { background-color: #fffbeb; }
+.border-yellow-400 { border-color: #fbbf24; }
+.text-yellow-400 { color: #fbbf24; }
+.text-yellow-800 { color: #92400e; }
+.text-yellow-700 { color: #a16207; }
+.border-l-4 { border-left-width: 4px; }
+.p-4 { padding: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.flex { display: flex; }
+.flex-shrink-0 { flex-shrink: 0; }
+.ml-3 { margin-left: 0.75rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-1 { margin-top: 0.25rem; }
+.text-sm { font-size: 0.875rem; }
+.font-medium { font-weight: 500; }
+.list-disc { list-style-type: disc; }
+.list-inside { list-style-position: inside; }
+
 .entry-date {
   font-size: 1rem;
   font-weight: 500;
