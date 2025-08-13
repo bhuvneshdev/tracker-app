@@ -39,13 +39,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check if user is authenticated on app load
-    if (token) {
+    if (token && token !== 'null' && token !== 'undefined') {
+      // Set the authorization header for all requests
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUser();
+    } else if (token === null) {
+      // Clear any existing auth headers
+      delete axios.defaults.headers.common['Authorization'];
     }
   }, [token]);
 
   const fetchUser = async () => {
     try {
+      if (!token) {
+        logout();
+        return;
+      }
+      
       const response = await axios.get(`${API_BASE_URL}/auth/me`);
       setUser(response.data);
     } catch (error) {
