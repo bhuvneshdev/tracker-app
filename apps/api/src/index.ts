@@ -133,6 +133,19 @@ function calculateDaysInCanada(entries: any[]): number {
 }
 
 // Routes
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Canada Tracker API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      entries: '/api/entries',
+      stats: '/api/stats'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
