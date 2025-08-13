@@ -74,9 +74,11 @@ function calculateDaysInCanada(entries: any[]): number {
   // Only count current open entry if it's the most recent entry and has no exit
   if (currentEntry) {
     // Check if this is the most recent entry (no subsequent entries)
-    const isMostRecent = !sortedEntries.some(entry => 
-      new Date(entry.date) > new Date(currentEntry.date)
-    );
+    const currentEntryDate = new Date(currentEntry.date);
+    const isMostRecent = !sortedEntries.some(entry => {
+      const entryDate = new Date(entry.date);
+      return entryDate > currentEntryDate;
+    });
     
     if (isMostRecent) {
       const entryDate = new Date(currentEntry.date);

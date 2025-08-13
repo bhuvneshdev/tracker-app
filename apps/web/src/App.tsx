@@ -242,8 +242,35 @@ function App() {
     )[0];
   };
 
+  // Helper function to find connected entry/exit pairs
+  const getConnectedPairs = () => {
+    const pairs: { entry: EntryExit; exit: EntryExit | null }[] = [];
+    const sortedEntries = [...entries].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    let currentEntry: EntryExit | null = null;
+    
+    for (const entry of sortedEntries) {
+      if (entry.type === 'ENTRY') {
+        currentEntry = entry;
+      } else if (entry.type === 'EXIT' && currentEntry) {
+        pairs.push({ entry: currentEntry, exit: entry });
+        currentEntry = null;
+      }
+    }
+    
+    // Add any remaining unclosed entry
+    if (currentEntry) {
+      pairs.push({ entry: currentEntry, exit: null });
+    }
+    
+    return pairs;
+  };
+
   const unclosedEntries = getUnclosedEntries();
   const currentOpenEntry = getCurrentOpenEntry();
+  const connectedPairs = getConnectedPairs();
 
   if (loading) {
     return (
@@ -566,35 +593,29 @@ function App() {
             </div>
           ) : (
             <div className="entries-list">
-              {entries.map((entry) => {
-                // Check if this entry has a corresponding exit
-                const hasExit = entry.type === 'ENTRY' ? 
-                  entries.some(exit => 
-                    exit.type === 'EXIT' && 
-                    new Date(exit.date) > new Date(entry.date)
-                  ) : true;
-                
-                return (
-                  <div key={entry.id} className={`entry-item ${entry.type === 'ENTRY' && !hasExit ? 'entry-open' : ''}`}>
+              {connectedPairs.map((pair, index) => (
+                <div key={pair.entry.id} className="entry-pair">
+                  {/* Entry */}
+                  <div className={`entry-item ${pair.exit ? '' : 'entry-open'}`}>
                     <div className="entry-info">
-                      <span className={`entry-type ${hasExit ? '' : 'entry-open'}`}>
-                        {entry.type}
-                        {entry.type === 'ENTRY' && !hasExit && ' (Open)'}
+                      <span className={`entry-type ${pair.exit ? '' : 'entry-open'}`}>
+                        {pair.entry.type}
+                        {!pair.exit && ' (Open)'}
                       </span>
                       <div className="entry-date">
-                        {format(parseISO(entry.date), 'MMM dd, yyyy HH:mm')}
+                        {format(parseISO(pair.entry.date), 'MMM dd, yyyy HH:mm')}
                       </div>
                       <div className="entry-port">
                         <MapPin className="w-4 h-4 inline mr-1" />
-                        {entry.portOfEntry}
+                        {pair.entry.portOfEntry}
                       </div>
-                      {entry.notes && (
-                        <div className="entry-notes">{entry.notes}</div>
+                      {pair.entry.notes && (
+                        <div className="entry-notes">{pair.entry.notes}</div>
                       )}
-                      {entry.proofLink && (
+                      {pair.entry.proofLink && (
                         <div className="entry-proof">
                           <a 
-                            href={entry.proofLink} 
+                            href={pair.entry.proofLink} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="proof-link"
@@ -603,10 +624,10 @@ function App() {
                           </a>
                         </div>
                       )}
-                      {entry.i94Proof && (
+                      {pair.entry.i94Proof && (
                         <div className="entry-proof">
                           <a 
-                            href={entry.i94Proof} 
+                            href={pair.entry.i94Proof} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="proof-link i94-proof"
@@ -617,22 +638,83 @@ function App() {
                       )}
                     </div>
                     <div className="entry-actions">
-                      <button
-                        onClick={() => handleEdit(entry)}
-                        className="btn btn-sm btn-secondary"
-                      >
+                      <button onClick={() => handleEdit(pair.entry)} className="btn-icon">
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(entry.id)}
-                        className="btn btn-sm btn-danger"
-                      >
+                      <button onClick={() => handleDelete(pair.entry.id)} className="btn-icon">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* Connection Line */}
+                  {pair.exit && (
+                    <div className="connection-line">
+                      <div className="connection-dot"></div>
+                      <div className="connection-line-vertical"></div>
+                      <div className="connection-dot"></div>
+                    </div>
+                  )}
+
+                  {/* Exit */}
+                  {pair.exit && (
+                    <div className="entry-item">
+                      <div className="entry-info">
+                        <span className="entry-type">
+                          {pair.exit.type}
+                        </span>
+                        <div className="entry-date">
+                          {format(parseISO(pair.exit.date), 'MMM dd, yyyy HH:mm')}
+                        </div>
+                        <div className="entry-port">
+                          <MapPin className="w-4 h-4 inline mr-1" />
+                          {pair.exit.portOfEntry}
+                        </div>
+                        {pair.exit.notes && (
+                          <div className="entry-notes">{pair.exit.notes}</div>
+                        )}
+                        {pair.exit.proofLink && (
+                          <div className="entry-proof">
+                            <a 
+                              href={pair.exit.proofLink} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="proof-link"
+                            >
+                              📎 View Proof
+                            </a>
+                          </div>
+                        )}
+                        {pair.exit.i94Proof && (
+                          <div className="entry-proof">
+                            <a 
+                              href={pair.exit.i94Proof} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="proof-link i94-proof"
+                            >
+                              🛂 View I-94
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                      <div className="entry-actions">
+                        <button onClick={() => handleEdit(pair.exit!)} className="btn-icon">
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(pair.exit!.id)} className="btn-icon">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Separator between pairs */}
+                  {index < connectedPairs.length - 1 && (
+                    <div className="pair-separator"></div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
