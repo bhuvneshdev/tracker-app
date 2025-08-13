@@ -13,7 +13,7 @@ Get your Canada Residency Days Tracker running in 5 minutes!
 ```bash
 # If you haven't already cloned the repository
 git clone <your-repo-url>
-cd canada-days-tracker
+cd tracker
 
 # Run the automated setup script
 ./setup.sh

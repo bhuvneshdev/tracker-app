@@ -155,7 +155,7 @@ Example:
 ### Project Structure
 
 ```
-canada-days-tracker/
+tracker/
 ├── apps/
 │   ├── api/                 # Backend API
 │   │   ├── src/
