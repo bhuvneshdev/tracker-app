@@ -433,7 +433,6 @@ function App() {
                     onChange={(e) => setFormData({...formData, portOfEntry: e.target.value})}
                     className="form-select"
                     required
-                    disabled={formData.type === 'EXIT' && !!formData.correspondingEntryId}
                   >
                     <option value="">Select port of entry</option>
                     {commonPorts.map(port => (
@@ -442,7 +441,7 @@ function App() {
                   </select>
                   {formData.type === 'EXIT' && formData.correspondingEntryId && (
                     <p className="text-sm text-gray-600 mt-1">
-                      Port auto-filled from selected entry
+                      Port auto-filled from selected entry (you can change this if needed)
                     </p>
                   )}
                 </div>
