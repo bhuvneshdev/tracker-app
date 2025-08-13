@@ -6,7 +6,6 @@ services:
     rootDir: apps/api
     buildCommand: npm install && npm run generate && npm run db:deploy && npm run build
     startCommand: npm start
-    plan: free
     envVars:
       - key: NODE_ENV
         value: production
@@ -21,7 +20,6 @@ services:
     rootDir: apps/web
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
-    plan: free
     envVars:
       - key: VITE_API_URL
         value: https://canada-tracker-api.onrender.com/api
