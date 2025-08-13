@@ -508,19 +508,20 @@ function App() {
                   </p>
                 </div>
 
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                  >
-                    {editingEntry ? 'Update' : 'Save'}
-                  </button>
+                <div className="form-actions">
                   <button
                     type="button"
-                    onClick={resetForm}
-                    className="btn btn-secondary"
+                    onClick={() => setShowForm(false)}
+                    className="btn-secondary"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? 'Saving...' : (editingEntry ? 'Update' : 'Save')}
                   </button>
                 </div>
               </form>
