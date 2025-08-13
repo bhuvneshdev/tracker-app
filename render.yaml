@@ -11,6 +11,8 @@ services:
         value: production
       - key: DATABASE_URL
         value: postgresql://neondb_owner:npg_XJ3Em1PHklVR@ep-jolly-dust-afd7faly-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+      - key: JWT_SECRET
+        generateValue: true
     healthCheckPath: /api/health
 
   # Frontend Web Service

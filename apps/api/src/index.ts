@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import { PrismaClient } from '../generated/prisma';
 import { z } from 'zod';
+import { authenticateToken, generateToken, verifyGoogleToken, AuthenticatedRequest } from './auth';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -150,11 +151,78 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
+      auth: '/api/auth',
       entries: '/api/entries',
       stats: '/api/stats'
     },
     timestamp: new Date().toISOString()
   });
+});
+
+// Authentication routes
+app.post('/api/auth/google', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    
+    if (!idToken) {
+      return res.status(400).json({ error: 'Google ID token required' });
+    }
+
+    const googleUser = await verifyGoogleToken(idToken);
+    
+    // Find or create user
+    let user = await prisma.user.findUnique({
+      where: { googleId: googleUser.googleId }
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email: googleUser.email,
+          name: googleUser.name,
+          picture: googleUser.picture,
+          googleId: googleUser.googleId
+        }
+      });
+    }
+
+    const token = generateToken(user.id);
+    
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        picture: user.picture
+      }
+    });
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(401).json({ error: 'Authentication failed' });
+  }
+});
+
+app.get('/api/auth/me', authenticateToken, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      picture: user.picture
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
 });
 
 app.get('/api/health', async (req, res) => {
@@ -177,11 +245,12 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Get all entries/exits
-app.get('/api/entries', async (req, res) => {
+// Get all entries/exits for authenticated user
+app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     console.log('Attempting to fetch entries from database...');
     const entries = await prisma.entryExit.findMany({
+      where: { userId: req.user!.id },
       orderBy: { date: 'asc' }, // Changed from 'desc' to 'asc' for chronological order
     });
     console.log(`Successfully fetched ${entries.length} entries`);
@@ -201,8 +270,8 @@ app.get('/api/entries', async (req, res) => {
   }
 });
 
-// Add new entry/exit
-app.post('/api/entries', async (req, res) => {
+// Add new entry/exit for authenticated user
+app.post('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const validatedData = entryExitSchema.parse(req.body);
     
@@ -212,6 +281,7 @@ app.post('/api/entries', async (req, res) => {
         date: new Date(validatedData.date),
         portOfEntry: validatedData.portOfEntry,
         notes: validatedData.notes,
+        userId: req.user!.id,
       },
     });
     
@@ -226,10 +296,11 @@ app.post('/api/entries', async (req, res) => {
   }
 });
 
-// Get total days in Canada
-app.get('/api/stats', async (req, res) => {
+// Get total days in Canada for authenticated user
+app.get('/api/stats', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const entries = await prisma.entryExit.findMany({
+      where: { userId: req.user!.id },
       orderBy: { date: 'asc' },
     });
     
@@ -248,10 +319,23 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// Delete entry
-app.delete('/api/entries/:id', async (req, res) => {
+// Delete entry for authenticated user
+app.delete('/api/entries/:id', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
+    
+    // Verify the entry belongs to the user
+    const entry = await prisma.entryExit.findFirst({
+      where: { 
+        id,
+        userId: req.user!.id
+      }
+    });
+    
+    if (!entry) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
+    
     await prisma.entryExit.delete({
       where: { id },
     });
@@ -262,11 +346,23 @@ app.delete('/api/entries/:id', async (req, res) => {
   }
 });
 
-// Update entry
-app.put('/api/entries/:id', async (req, res) => {
+// Update entry for authenticated user
+app.put('/api/entries/:id', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
     const validatedData = entryExitSchema.parse(req.body);
+    
+    // Verify the entry belongs to the user
+    const existingEntry = await prisma.entryExit.findFirst({
+      where: { 
+        id,
+        userId: req.user!.id
+      }
+    });
+    
+    if (!existingEntry) {
+      return res.status(404).json({ error: 'Entry not found' });
+    }
     
     const entry = await prisma.entryExit.update({
       where: { id },
