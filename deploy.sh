@@ -1,70 +1,64 @@
 #!/bin/bash
 
-echo "🚀 Canada Residency Tracker - Deployment Helper"
-echo "================================================"
-
-echo ""
-echo "📋 Pre-deployment Checklist:"
-echo "1. Have you created accounts on Vercel, Render, and Neon?"
-echo "2. Do you have your Neon database connection string?"
-echo "3. Is your code pushed to GitHub?"
+echo "🚀 Canada Days Tracker - Deployment Helper"
+echo "=========================================="
 echo ""
 
-read -p "Are you ready to proceed? (y/n): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Please complete the prerequisites first. See DEPLOYMENT.md for details."
-    exit 1
+# Check if git is configured
+if ! git config --global user.name > /dev/null 2>&1; then
+    echo "⚠️  Git not configured. Please run:"
+    echo "   git config --global user.name 'Your Name'"
+    echo "   git config --global user.email 'your.email@example.com'"
+    echo ""
 fi
 
-echo ""
-echo "🔧 Building application for deployment..."
-
-# Build API
-echo "Building API..."
-cd apps/api
-npm run build
-if [ $? -ne 0 ]; then
-    echo "❌ API build failed"
-    exit 1
+# Check if code is committed
+if [ -n "$(git status --porcelain)" ]; then
+    echo "⚠️  You have uncommitted changes. Please commit them first:"
+    echo "   git add . && git commit -m 'Your commit message'"
+    echo ""
 fi
 
-# Build Web
-echo "Building Web app..."
-cd ../web
-npm run build
-if [ $? -ne 0 ]; then
-    echo "❌ Web build failed"
-    exit 1
-fi
-
-cd ../..
-
+echo "📋 Deployment Steps:"
 echo ""
-echo "✅ Build completed successfully!"
+echo "1. 🌐 Create GitHub Repository:"
+echo "   - Go to https://github.com/new"
+echo "   - Name: canada-days-tracker"
+echo "   - Make it public or private"
+echo "   - Don't initialize with README (we already have one)"
 echo ""
-echo "📝 Next Steps:"
+echo "2. 📤 Push to GitHub:"
+echo "   git remote add origin https://github.com/YOUR_USERNAME/canada-days-tracker.git"
+echo "   git branch -M main"
+echo "   git push -u origin main"
 echo ""
-echo "1. 🗄️  Database (Neon):"
-echo "   - Go to https://neon.tech/"
-echo "   - Create project and copy connection string"
-echo "   - Update apps/api/.env with your DATABASE_URL"
+echo "3. 🗄️  Set up Database (Neon):"
+echo "   - Go to https://neon.tech"
+echo "   - Create account and new project"
+echo "   - Copy the connection string"
 echo ""
-echo "2. 🔧 Backend API (Render):"
-echo "   - Go to https://render.com/"
-echo "   - Create new Web Service"
+echo "4. 🔧 Deploy Backend (Render):"
+echo "   - Go to https://render.com"
 echo "   - Connect your GitHub repo"
-echo "   - Root Directory: apps/api"
-echo "   - Build Command: npm install && npm run build"
-echo "   - Start Command: npm start"
+echo "   - Create Web Service"
+echo "   - Build Command: cd apps/api && npm install && npm run build"
+echo "   - Start Command: cd apps/api && npm start"
 echo "   - Add DATABASE_URL environment variable"
 echo ""
-echo "3. 🌐 Frontend (Vercel):"
-echo "   - Go to https://vercel.com/"
+echo "5. 🎨 Deploy Frontend (Vercel):"
+echo "   - Go to https://vercel.com"
 echo "   - Import your GitHub repo"
 echo "   - Root Directory: apps/web"
-echo "   - Add VITE_API_URL environment variable (your Render API URL)"
+echo "   - Add VITE_API_URL environment variable"
 echo ""
-echo "📚 For detailed instructions, see DEPLOYMENT.md"
+echo "6. 🗃️  Run Database Migration:"
+echo "   - In Render Shell:"
+echo "     cd apps/api"
+echo "     npx prisma generate"
+echo "     npx prisma db push"
+echo ""
+echo "📖 For detailed instructions, see DEPLOYMENT.md"
 echo ""
 echo "🎉 Your app will be live and accessible from anywhere!"
+echo ""
+echo "Need help? Check the troubleshooting section in DEPLOYMENT.md"
