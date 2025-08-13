@@ -1,0 +1,33 @@
+{
+  "name": "canada-days-tracker",
+  "version": "1.0.0",
+  "description": "A comprehensive web application to track your 730-day residency obligation as a Canadian Permanent Resident",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cd apps/api && npm run dev",
+    "dev:web": "cd apps/web && npm run dev",
+    "build": "npm run build:api && npm run build:web",
+    "build:api": "cd apps/api && npm run build",
+    "build:web": "cd apps/web && npm run build",
+    "install:all": "cd apps/api && npm install && cd ../web && npm install",
+    "db:generate": "cd apps/api && npx prisma generate",
+    "db:push": "cd apps/api && npx prisma db push",
+    "db:studio": "cd apps/api && npx prisma studio"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "canada",
+    "residency",
+    "tracker",
+    "permanent-resident",
+    "immigration",
+    "react",
+    "nodejs",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT"
+}

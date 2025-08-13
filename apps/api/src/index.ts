@@ -1,0 +1,226 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import pinoHttp from 'pino-http';
+import { PrismaClient } from '../generated/prisma';
+import { z } from 'zod';
+
+const app = express();
+const prisma = new PrismaClient();
+const logger = pinoHttp();
+
+// Middleware
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+app.use(logger);
+
+// Validation schemas
+const EntryExitSchema = z.object({
+  type: z.enum(['ENTRY', 'EXIT']),
+  date: z.string().datetime(),
+  portOfEntry: z.string().min(1),
+  notes: z.string().optional(),
+});
+
+// Helper function to calculate days in Canada
+function calculateDaysInCanada(entries: any[]): number {
+  let totalDays = 0;
+  let currentEntry: any = null;
+
+  // Sort entries by date
+  const sortedEntries = entries.sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  console.log('Calculating days for entries:', sortedEntries.map(e => ({
+    type: e.type,
+    date: e.date,
+    localDate: new Date(e.date).toLocaleDateString()
+  })));
+
+  for (const entry of sortedEntries) {
+    if (entry.type === 'ENTRY') {
+      currentEntry = entry;
+    } else if (entry.type === 'EXIT' && currentEntry) {
+      // Convert to local timezone for proper day calculation
+      const entryDate = new Date(currentEntry.date);
+      const exitDate = new Date(entry.date);
+      
+      // Get the local date strings (YYYY-MM-DD) to compare days
+      const entryDay = entryDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+      const exitDay = exitDate.toLocaleDateString('en-CA');
+      
+      console.log(`Processing: Entry ${entryDay} -> Exit ${exitDay}`);
+      
+      if (entryDay === exitDay) {
+        // Same day entry and exit = 1 day
+        totalDays += 1;
+        console.log(`Same day: +1 day (total: ${totalDays})`);
+      } else {
+        // Different days: count each day from entry to exit (inclusive)
+        const startDate = new Date(entryDay);
+        const endDate = new Date(exitDay);
+        
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+          totalDays += 1;
+          console.log(`Day ${currentDate.toLocaleDateString()}: +1 day (total: ${totalDays})`);
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+      }
+      
+      currentEntry = null;
+    }
+  }
+
+  // If there's an open entry (no corresponding exit), count days until today
+  if (currentEntry) {
+    const entryDate = new Date(currentEntry.date);
+    const today = new Date();
+    
+    const entryDay = entryDate.toLocaleDateString('en-CA');
+    const todayDay = today.toLocaleDateString('en-CA');
+    
+    console.log(`Open entry: Entry ${entryDay} -> Today ${todayDay}`);
+    
+    if (entryDay === todayDay) {
+      // Entry today = 1 day
+      totalDays += 1;
+      console.log(`Same day as today: +1 day (total: ${totalDays})`);
+    } else {
+      // Count each day from entry to today (inclusive)
+      const startDate = new Date(entryDay);
+      const endDate = new Date(todayDay);
+      
+      let currentDate = new Date(startDate);
+      while (currentDate <= endDate) {
+        totalDays += 1;
+        console.log(`Day ${currentDate.toLocaleDateString()}: +1 day (total: ${totalDays})`);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+  }
+
+  console.log(`Final total days: ${totalDays}`);
+  return totalDays;
+}
+
+// Routes
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Get all entries/exits
+app.get('/api/entries', async (req, res) => {
+  try {
+    const entries = await prisma.entryExit.findMany({
+      orderBy: { date: 'asc' }, // Changed from 'desc' to 'asc' for chronological order
+    });
+    res.json(entries);
+  } catch (error) {
+    console.error('Error fetching entries:', error);
+    res.status(500).json({ error: 'Failed to fetch entries' });
+  }
+});
+
+// Add new entry/exit
+app.post('/api/entries', async (req, res) => {
+  try {
+    const validatedData = EntryExitSchema.parse(req.body);
+    
+    const entry = await prisma.entryExit.create({
+      data: {
+        type: validatedData.type,
+        date: new Date(validatedData.date),
+        portOfEntry: validatedData.portOfEntry,
+        notes: validatedData.notes,
+      },
+    });
+    
+    res.status(201).json(entry);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Validation error', details: error.issues });
+    } else {
+      console.error('Error creating entry:', error);
+      res.status(500).json({ error: 'Failed to create entry' });
+    }
+  }
+});
+
+// Get total days in Canada
+app.get('/api/stats', async (req, res) => {
+  try {
+    const entries = await prisma.entryExit.findMany({
+      orderBy: { date: 'asc' },
+    });
+    
+    const totalDays = calculateDaysInCanada(entries);
+    const remainingDays = Math.max(0, 730 - totalDays);
+    
+    res.json({
+      totalDaysInCanada: totalDays,
+      remainingDays: remainingDays,
+      targetDays: 730,
+      percentageComplete: Math.min(100, (totalDays / 730) * 100),
+    });
+  } catch (error) {
+    console.error('Error calculating stats:', error);
+    res.status(500).json({ error: 'Failed to calculate stats' });
+  }
+});
+
+// Delete entry
+app.delete('/api/entries/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.entryExit.delete({
+      where: { id },
+    });
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting entry:', error);
+    res.status(500).json({ error: 'Failed to delete entry' });
+  }
+});
+
+// Update entry
+app.put('/api/entries/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const validatedData = EntryExitSchema.parse(req.body);
+    
+    const entry = await prisma.entryExit.update({
+      where: { id },
+      data: {
+        type: validatedData.type,
+        date: new Date(validatedData.date),
+        portOfEntry: validatedData.portOfEntry,
+        notes: validatedData.notes,
+      },
+    });
+    
+    res.json(entry);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Validation error', details: error.issues });
+    } else {
+      console.error('Error updating entry:', error);
+      res.status(500).json({ error: 'Failed to update entry' });
+    }
+  }
+});
+
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  await prisma.$disconnect();
+  process.exit(0);
+});
