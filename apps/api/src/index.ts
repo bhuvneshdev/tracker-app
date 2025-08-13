@@ -80,27 +80,24 @@ function calculateDaysInCanada(entries: any[]): number {
       return entryDate > currentEntryDate;
     });
     
-    // Also check if there are any completed entry/exit pairs after this open entry
-    const hasSubsequentCompletedPairs = (() => {
-      let hasEntryAfterOpen = false;
-      let hasExitAfterOpen = false;
+    // Check if there are any completed entry/exit pairs in the entire dataset
+    const hasAnyCompletedPairs = (() => {
+      let completedPairs = 0;
+      let tempEntry = null;
       
       for (const entry of sortedEntries) {
-        const entryDate = new Date(entry.date);
-        if (entryDate > currentEntryDate) {
-          if (entry.type === 'ENTRY') {
-            hasEntryAfterOpen = true;
-          } else if (entry.type === 'EXIT') {
-            hasExitAfterOpen = true;
-          }
+        if (entry.type === 'ENTRY') {
+          tempEntry = entry;
+        } else if (entry.type === 'EXIT' && tempEntry) {
+          completedPairs++;
+          tempEntry = null;
         }
       }
       
-      // If there are both entry and exit after the open entry, it's a completed pair
-      return hasEntryAfterOpen && hasExitAfterOpen;
+      return completedPairs > 0;
     })();
     
-    if (isMostRecent && !hasSubsequentCompletedPairs) {
+    if (isMostRecent && !hasAnyCompletedPairs) {
       const entryDate = new Date(currentEntry.date);
       const today = new Date();
       const entryDay = entryDate.toLocaleDateString('en-CA');
@@ -123,8 +120,8 @@ function calculateDaysInCanada(entries: any[]): number {
         }
       }
     } else {
-      if (hasSubsequentCompletedPairs) {
-        console.log(`Past open entry ${currentEntry.date} ignored - has subsequent completed entry/exit pairs`);
+      if (hasAnyCompletedPairs) {
+        console.log(`Open entry ${currentEntry.date} ignored - there are completed entry/exit pairs in the dataset`);
       } else {
         console.log(`Past open entry ${currentEntry.date} ignored - not the most recent entry`);
       }
