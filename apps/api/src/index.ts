@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import { PrismaClient } from '../generated/prisma';
 import { z } from 'zod';
-import { authenticateToken, generateToken, verifyGoogleToken, AuthenticatedRequest } from './auth';
+// import { authenticateToken, generateToken, verifyGoogleToken, AuthenticatedRequest } from './auth';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -159,7 +159,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// Authentication routes
+// Authentication routes (temporarily disabled until migration completes)
+/*
 app.post('/api/auth/google', async (req, res) => {
   try {
     const { idToken } = req.body;
@@ -224,6 +225,7 @@ app.get('/api/auth/me', authenticateToken, async (req: AuthenticatedRequest, res
     res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
+*/
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -245,17 +247,12 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Get all entries/exits for authenticated user
-app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res) => {
+// Get all entries/exits (temporarily without auth until migration completes)
+app.get('/api/entries', async (req, res) => {
   try {
     console.log('Attempting to fetch entries from database...');
+    // For now, get all entries since userId field doesn't exist yet
     const entries = await prisma.entryExit.findMany({
-      where: { 
-        OR: [
-          { userId: req.user!.id },
-          { userId: null } // Include legacy entries for now
-        ]
-      },
       orderBy: { date: 'asc' }, // Changed from 'desc' to 'asc' for chronological order
     });
     console.log(`Successfully fetched ${entries.length} entries`);
@@ -275,8 +272,8 @@ app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res
   }
 });
 
-// Add new entry/exit for authenticated user
-app.post('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res) => {
+// Add new entry/exit (temporarily without auth until migration completes)
+app.post('/api/entries', async (req, res) => {
   try {
     const validatedData = entryExitSchema.parse(req.body);
     
@@ -286,7 +283,6 @@ app.post('/api/entries', authenticateToken, async (req: AuthenticatedRequest, re
         date: new Date(validatedData.date),
         portOfEntry: validatedData.portOfEntry,
         notes: validatedData.notes,
-        userId: req.user!.id,
       },
     });
     
