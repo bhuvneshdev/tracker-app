@@ -4,13 +4,12 @@ services:
     name: canada-tracker-api
     env: node
     rootDir: apps/api
-    buildCommand: npm install && npm run generate && npm run db:deploy && npm run build
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DATABASE_URL
-        value: postgresql://neondb_owner:npg_XJ3Em1PHklVR@ep-jolly-dust-afd7faly-pooler.c-2.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
       - key: JWT_SECRET
         generateValue: true
     healthCheckPath: /api/health
