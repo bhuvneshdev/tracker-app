@@ -297,14 +297,15 @@ app.post('/api/entries', authenticateToken, async (req: AuthenticatedRequest, re
   }
 });
 
-// Get total days in Canada (temporarily without auth until migration completes)
-app.get('/api/stats', async (req, res) => {
+// Get total days in Canada for the authenticated user
+app.get('/api/stats', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
-    const entries = await prisma.entryExit.findMany({
-      orderBy: { date: 'asc' },
-    });
+    const userEmail = req.user!.email;
     
-    const totalDays = calculateDaysInCanada(entries);
+    // Get user-specific entries
+    const userSpecificEntries = userEntries[userEmail] || [];
+    
+    const totalDays = calculateDaysInCanada(userSpecificEntries);
     const remainingDays = Math.max(0, 730 - totalDays);
     
     res.json({
