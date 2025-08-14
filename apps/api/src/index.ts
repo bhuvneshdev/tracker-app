@@ -238,13 +238,9 @@ app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res
     const userEmail = req.user!.email;
     const userSpecificEntries = userEntries[userEmail] || [];
     
-    // Also get legacy entries from database (for backward compatibility)
-    const legacyEntries = await prisma.entryExit.findMany({
-      orderBy: { date: 'asc' },
-    });
-    
-    // Combine user-specific entries with legacy entries
-    const allEntries = [...userSpecificEntries, ...legacyEntries];
+    // For now, only return user-specific entries
+    // Legacy entries are not user-specific, so we exclude them
+    const allEntries = [...userSpecificEntries];
     
     console.log(`Successfully fetched ${allEntries.length} entries for user ${userEmail}`);
     res.json(allEntries);
