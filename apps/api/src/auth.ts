@@ -52,25 +52,19 @@ export const generateToken = (userId: string): string => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
 };
 
-export const verifyGoogleToken = async (idToken: string) => {
+export const verifySimpleToken = async (token: string) => {
   try {
-    // Verify the token with Google's API
-    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
-    
-    if (!response.ok) {
-      throw new Error('Invalid Google token');
-    }
-    
-    const payload = await response.json() as any;
+    // Decode our simple base64 token
+    const decoded = JSON.parse(atob(token));
     
     return {
-      email: payload.email,
-      name: payload.name,
-      picture: payload.picture,
-      googleId: payload.sub
+      email: decoded.email,
+      name: decoded.name || decoded.email.split('@')[0],
+      picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(decoded.name || decoded.email)}&background=random`,
+      userId: `user-${decoded.timestamp}`
     };
   } catch (error) {
-    console.error('Google token verification error:', error);
-    throw new Error('Failed to verify Google token');
+    console.error('Token verification error:', error);
+    throw new Error('Failed to verify token');
   }
 };

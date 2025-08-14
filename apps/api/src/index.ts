@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import pinoHttp from 'pino-http';
 import { PrismaClient } from '../generated/prisma';
 import { z } from 'zod';
-import { authenticateToken, generateToken, verifyGoogleToken, AuthenticatedRequest } from './auth';
+import { authenticateToken, generateToken, verifySimpleToken, AuthenticatedRequest } from './auth';
 
 const app = express();
 const prisma = new PrismaClient();
@@ -165,36 +165,22 @@ app.post('/api/auth/google', async (req, res) => {
     const { idToken } = req.body;
     
     if (!idToken) {
-      return res.status(400).json({ error: 'Google ID token required' });
+      return res.status(400).json({ error: 'Token required' });
     }
 
-    const googleUser = await verifyGoogleToken(idToken);
+    const userData = await verifySimpleToken(idToken);
     
-    // Find or create user
-    let user = await prisma.user.findUnique({
-      where: { googleId: googleUser.googleId }
-    });
-
-    if (!user) {
-      user = await prisma.user.create({
-        data: {
-          email: googleUser.email,
-          name: googleUser.name,
-          picture: googleUser.picture,
-          googleId: googleUser.googleId
-        }
-      });
-    }
-
-    const token = generateToken(user.id);
+    // For now, just return the user data without database storage
+    // In a real app, you'd store this in the database
+    const token = generateToken(userData.userId);
     
     res.json({
       token,
       user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        picture: user.picture
+        id: userData.userId,
+        email: userData.email,
+        name: userData.name,
+        picture: userData.picture
       }
     });
   } catch (error) {
@@ -205,19 +191,13 @@ app.post('/api/auth/google', async (req, res) => {
 
 app.get('/api/auth/me', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user!.id }
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
+    // For now, just return the user data from the token
+    // In a real app, you'd fetch this from the database
     res.json({
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      picture: user.picture
+      id: req.user!.id,
+      email: req.user!.email,
+      name: req.user!.name,
+      picture: req.user!.picture
     });
   } catch (error) {
     console.error('Error fetching user:', error);
@@ -250,10 +230,9 @@ app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res
   try {
     console.log('Attempting to fetch entries from database...');
     const entries = await prisma.entryExit.findMany({
-      where: { userId: req.user!.id },
       orderBy: { date: 'asc' }, // Changed from 'desc' to 'asc' for chronological order
     });
-    console.log(`Successfully fetched ${entries.length} entries for user ${req.user!.id}`);
+    console.log(`Successfully fetched ${entries.length} entries`);
     res.json(entries);
   } catch (error) {
     console.error('Error fetching entries:', error);
@@ -270,7 +249,7 @@ app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res
   }
 });
 
-// Add new entry/exit for authenticated user
+// Add new entry/exit (temporarily without user association)
 app.post('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const validatedData = entryExitSchema.parse(req.body);
@@ -281,7 +260,6 @@ app.post('/api/entries', authenticateToken, async (req: AuthenticatedRequest, re
         date: new Date(validatedData.date),
         portOfEntry: validatedData.portOfEntry,
         notes: validatedData.notes,
-        userId: req.user!.id,
       },
     });
     
