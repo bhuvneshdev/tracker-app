@@ -8,6 +8,10 @@ import { authenticateToken, generateToken, verifySimpleToken, AuthenticatedReque
 
 const app = express();
 const prisma = new PrismaClient();
+
+// Simple in-memory storage for user-specific data
+// In a real app, this would be in the database
+const userEntries: { [email: string]: any[] } = {};
 const logger = pinoHttp();
 
 // Middleware
@@ -172,7 +176,7 @@ app.post('/api/auth/google', async (req, res) => {
     
     // For now, just return the user data without database storage
     // In a real app, you'd store this in the database
-    const token = generateToken(userData.userId);
+    const token = generateToken(userData.userId, userData.email, userData.name, userData.picture);
     
     res.json({
       token,
@@ -228,12 +232,22 @@ app.get('/api/health', async (req, res) => {
 // Get all entries/exits (temporarily without auth until migration completes)
 app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
-    console.log('Attempting to fetch entries from database...');
-    const entries = await prisma.entryExit.findMany({
-      orderBy: { date: 'asc' }, // Changed from 'desc' to 'asc' for chronological order
+    console.log('Attempting to fetch entries for user:', req.user!.email);
+    
+    // Get user-specific entries from in-memory storage
+    const userEmail = req.user!.email;
+    const userSpecificEntries = userEntries[userEmail] || [];
+    
+    // Also get legacy entries from database (for backward compatibility)
+    const legacyEntries = await prisma.entryExit.findMany({
+      orderBy: { date: 'asc' },
     });
-    console.log(`Successfully fetched ${entries.length} entries`);
-    res.json(entries);
+    
+    // Combine user-specific entries with legacy entries
+    const allEntries = [...userSpecificEntries, ...legacyEntries];
+    
+    console.log(`Successfully fetched ${allEntries.length} entries for user ${userEmail}`);
+    res.json(allEntries);
   } catch (error) {
     console.error('Error fetching entries:', error);
     console.error('Error details:', {
@@ -249,20 +263,33 @@ app.get('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res
   }
 });
 
-// Add new entry/exit (temporarily without user association)
+// Add new entry/exit for the authenticated user
 app.post('/api/entries', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const validatedData = entryExitSchema.parse(req.body);
+    const userEmail = req.user!.email;
     
-    const entry = await prisma.entryExit.create({
-      data: {
-        type: validatedData.type,
-        date: new Date(validatedData.date),
-        portOfEntry: validatedData.portOfEntry,
-        notes: validatedData.notes,
-      },
-    });
+    // Create entry with user email
+    const entry = {
+      id: `entry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: validatedData.type,
+      date: new Date(validatedData.date),
+      portOfEntry: validatedData.portOfEntry,
+      notes: validatedData.notes,
+      proofLink: validatedData.proofLink,
+      i94Proof: validatedData.i94Proof,
+      userEmail: userEmail,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
     
+    // Store in user-specific storage
+    if (!userEntries[userEmail]) {
+      userEntries[userEmail] = [];
+    }
+    userEntries[userEmail].push(entry);
+    
+    console.log(`Created entry for user ${userEmail}:`, entry.id);
     res.status(201).json(entry);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -296,15 +323,28 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// Delete entry (temporarily without auth until migration completes)
-app.delete('/api/entries/:id', async (req, res) => {
+// Delete entry for the authenticated user
+app.delete('/api/entries/:id', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
+    const userEmail = req.user!.email;
     
-    await prisma.entryExit.delete({
-      where: { id },
-    });
-    res.status(204).send();
+    // Check if entry exists in user's data
+    const userSpecificEntries = userEntries[userEmail] || [];
+    const entryIndex = userSpecificEntries.findIndex(entry => entry.id === id);
+    
+    if (entryIndex !== -1) {
+      // Remove from user-specific storage
+      userSpecificEntries.splice(entryIndex, 1);
+      console.log(`Deleted entry ${id} for user ${userEmail}`);
+      res.status(204).send();
+    } else {
+      // Try to delete from legacy database
+      await prisma.entryExit.delete({
+        where: { id },
+      });
+      res.status(204).send();
+    }
   } catch (error) {
     console.error('Error deleting entry:', error);
     res.status(500).json({ error: 'Failed to delete entry' });

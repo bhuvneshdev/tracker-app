@@ -29,13 +29,17 @@ export const authenticateToken = async (
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     
-    // For now, just use the userId from the token
-    // In a real app, you'd look up the user in the database
+    // Extract user info from the token
+    // The userId contains the email and timestamp
+    const userIdParts = decoded.userId.split('-');
+    const timestamp = userIdParts[userIdParts.length - 1];
+    
+    // We'll store the email in the token payload for easy access
     req.user = {
       id: decoded.userId,
-      email: 'user@example.com', // This will be overridden by /api/auth/me
-      name: 'User',
-      picture: 'https://ui-avatars.com/api/?name=User&background=random'
+      email: decoded.email || 'user@example.com',
+      name: decoded.name || 'User',
+      picture: decoded.picture || 'https://ui-avatars.com/api/?name=User&background=random'
     };
     next();
   } catch (error) {
@@ -43,8 +47,8 @@ export const authenticateToken = async (
   }
 };
 
-export const generateToken = (userId: string): string => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
+export const generateToken = (userId: string, email: string, name: string, picture: string): string => {
+  return jwt.sign({ userId, email, name, picture }, JWT_SECRET, { expiresIn: '7d' });
 };
 
 export const verifySimpleToken = async (token: string) => {
