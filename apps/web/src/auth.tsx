@@ -61,21 +61,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, name?: string) => {
     try {
-      // Create a simple mock token for now
+      // Create a simple mock token for the backend
       const mockToken = btoa(JSON.stringify({ email, name, timestamp: Date.now() }));
-      const mockUser = {
-        id: `user-${Date.now()}`,
-        email,
-        name: name || email.split('@')[0],
-        picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email)}&background=random`
-      };
       
-      setToken(mockToken);
-      setUser(mockUser);
-      localStorage.setItem('authToken', mockToken);
+      // Call the backend authentication endpoint
+      const response = await axios.post(`${API_BASE_URL}/auth/google`, { idToken: mockToken });
+      const { token: newToken, user: userData } = response.data;
+      
+      setToken(newToken);
+      setUser(userData);
+      localStorage.setItem('authToken', newToken);
       
       // Set default authorization header for all future requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${mockToken}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
