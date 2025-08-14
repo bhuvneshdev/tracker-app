@@ -14,7 +14,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (idToken: string) => Promise<void>;
+  login: (email: string, name?: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -59,17 +59,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [token]);
 
-  const login = async (idToken: string) => {
+  const login = async (email: string, name?: string) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/auth/google`, { idToken });
-      const { token: newToken, user: userData } = response.data;
+      // Create a simple mock token for now
+      const mockToken = btoa(JSON.stringify({ email, name, timestamp: Date.now() }));
+      const mockUser = {
+        id: `user-${Date.now()}`,
+        email,
+        name: name || email.split('@')[0],
+        picture: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || email)}&background=random`
+      };
       
-      setToken(newToken);
-      setUser(userData);
-      localStorage.setItem('authToken', newToken);
+      setToken(mockToken);
+      setUser(mockUser);
+      localStorage.setItem('authToken', mockToken);
       
       // Set default authorization header for all future requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      axios.defaults.headers.common['Authorization'] = `Bearer ${mockToken}`;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -98,59 +104,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 };
 
-// Google Sign-In component
+// Simple Sign-In component
 export const GoogleSignIn: React.FC = () => {
   const { login, isAuthenticated, logout, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
 
-  useEffect(() => {
-    // Load Google Identity Services
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-
-    script.onload = () => {
-      if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: async (response: any) => {
-            try {
-              setIsLoading(true);
-              await login(response.credential);
-            } catch (error) {
-              console.error('Sign-in error:', error);
-              alert('Sign-in failed. Please try again.');
-            } finally {
-              setIsLoading(false);
-            }
-          },
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
-        
-        // Render the button after initialization
-        const buttonElement = document.getElementById('google-signin-button');
-        if (buttonElement) {
-          window.google.accounts.id.renderButton(buttonElement, {
-            type: 'standard',
-            theme: 'outline',
-            size: 'large',
-            text: 'signin_with',
-            shape: 'rectangular',
-          });
-        }
-      }
-    };
-
-    return () => {
-      // Cleanup
-      if (window.google) {
-        window.google.accounts.id.disableAutoSelect();
-      }
-    };
-  }, [login]);
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    
+    try {
+      setIsLoading(true);
+      await login(email, name || undefined);
+    } catch (error) {
+      console.error('Sign-in error:', error);
+      alert('Sign-in failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSignOut = () => {
     logout();
@@ -179,29 +153,29 @@ export const GoogleSignIn: React.FC = () => {
   }
 
   return (
-    <div>
-      {isLoading ? (
-        <div className="flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md">
-          Signing in...
-        </div>
-      ) : (
-        <div id="google-signin-button"></div>
-      )}
-    </div>
+    <form onSubmit={handleSignIn} className="flex flex-col gap-3">
+      <input
+        type="email"
+        placeholder="Enter your email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        required
+      />
+      <input
+        type="text"
+        placeholder="Enter your name (optional)"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <button
+        type="submit"
+        disabled={isLoading || !email.trim()}
+        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isLoading ? 'Signing in...' : 'Sign In'}
+      </button>
+    </form>
   );
 };
-
-// Extend window object for Google types
-declare global {
-  interface Window {
-    google: {
-      accounts: {
-        id: {
-          initialize: (config: any) => void;
-          renderButton: (element: HTMLElement, config: any) => void;
-          disableAutoSelect: () => void;
-        };
-      };
-    };
-  }
-}
