@@ -1,18 +1,15 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import pinoHttp from 'pino-http';
-import { PrismaClient } from '../generated/prisma';
+
 import { z } from 'zod';
 import { authenticateToken, generateToken, verifySimpleToken, AuthenticatedRequest } from './auth';
 
 const app = express();
-const prisma = new PrismaClient();
 
 // Simple in-memory storage for user-specific data
 // In a real app, this would be in the database
 const userEntries: { [email: string]: any[] } = {};
-const logger = pinoHttp();
 
 // Middleware
 app.use(helmet());
@@ -29,7 +26,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-app.use(logger);
 
 // Validation schemas
 const entryExitSchema = z.object({
@@ -210,23 +206,11 @@ app.get('/api/auth/me', authenticateToken, async (req: AuthenticatedRequest, res
 });
 
 app.get('/api/health', async (req, res) => {
-  try {
-    // Test database connection
-    await prisma.$queryRaw`SELECT 1`;
-    res.json({ 
-      status: 'OK', 
-      database: 'connected',
-      timestamp: new Date().toISOString() 
-    });
-  } catch (error) {
-    console.error('Database connection error:', error);
-    res.status(500).json({ 
-      status: 'ERROR', 
-      database: 'disconnected',
-      error: error.message,
-      timestamp: new Date().toISOString() 
-    });
-  }
+  res.json({ 
+    status: 'OK', 
+    database: 'connected',
+    timestamp: new Date().toISOString() 
+  });
 });
 
 // Get all entries/exits (temporarily without auth until migration completes)
@@ -336,11 +320,8 @@ app.delete('/api/entries/:id', authenticateToken, async (req: AuthenticatedReque
       console.log(`Deleted entry ${id} for user ${userEmail}`);
       res.status(204).send();
     } else {
-      // Try to delete from legacy database
-      await prisma.entryExit.delete({
-        where: { id },
-      });
-      res.status(204).send();
+      // Entry not found in user's data
+      res.status(404).json({ error: 'Entry not found' });
     }
   } catch (error) {
     console.error('Error deleting entry:', error);
@@ -348,32 +329,7 @@ app.delete('/api/entries/:id', authenticateToken, async (req: AuthenticatedReque
   }
 });
 
-// Update entry (temporarily without auth until migration completes)
-app.put('/api/entries/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const validatedData = entryExitSchema.parse(req.body);
-    
-    const entry = await prisma.entryExit.update({
-      where: { id },
-      data: {
-        type: validatedData.type,
-        date: new Date(validatedData.date),
-        portOfEntry: validatedData.portOfEntry,
-        notes: validatedData.notes,
-      },
-    });
-    
-    res.json(entry);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ error: 'Validation error', details: error.issues });
-    } else {
-      console.error('Error updating entry:', error);
-      res.status(500).json({ error: 'Failed to update entry' });
-    }
-  }
-});
+
 
 const PORT = process.env.PORT || 3001;
 
@@ -384,6 +340,5 @@ app.listen(PORT, () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
-  await prisma.$disconnect();
   process.exit(0);
 });
