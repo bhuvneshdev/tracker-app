@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import axios from 'axios';
 
@@ -105,6 +105,18 @@ export const GoogleSignIn: React.FC = () => {
   const { login, isAuthenticated, logout, user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleCredentialResponse = useCallback(async (response: any) => {
+    try {
+      setIsLoading(true);
+      await login(response.credential);
+    } catch (error) {
+      console.error('Sign-in error:', error);
+      alert('Sign-in failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [login]);
+
   useEffect(() => {
     // Load Google Identity Services
     const script = document.createElement('script');
@@ -142,19 +154,7 @@ export const GoogleSignIn: React.FC = () => {
         window.google.accounts.id.disableAutoSelect();
       }
     };
-  }, []);
-
-  const handleCredentialResponse = async (response: any) => {
-    try {
-      setIsLoading(true);
-      await login(response.credential);
-    } catch (error) {
-      console.error('Sign-in error:', error);
-      alert('Sign-in failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [handleCredentialResponse]);
 
 
 
